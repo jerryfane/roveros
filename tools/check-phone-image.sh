@@ -61,6 +61,16 @@ echo "kernel: $kver"
 for f in /opt/herdrup/herdrup /usr/lib/modules/$kver/modules.dep /etc/rover/kiosk.env; do
   debugfs -R "stat $f" root.ext4 2>/dev/null | grep -q "^Inode:" || fail "root lacks $f"
 done
+# Every systemd unit a udev rule asks for must exist (name@.service for
+# templates).
+debugfs -R "rdump /usr/lib/udev/rules.d /tmp" root.ext4 2>/dev/null
+for want in $(grep -ohE "SYSTEMD_WANTS\}=\"[^\"]+\"" /tmp/rules.d/*.rules | cut -d\" -f2 | tr " " "\n" | sort -u); do
+  unit=$want
+  case "$want" in *@*.service) unit="${want%%@*}@.service" ;; esac
+  debugfs -R "stat /usr/lib/systemd/system/$unit" root.ext4 2>/dev/null | grep -q "^Inode:" ||
+    fail "udev wants $want but the root lacks $unit"
+  echo "udev unit: $want"
+done
 debugfs -R "cat /etc/rover/kiosk.env" root.ext4 2>/dev/null | grep -qx "GDK_SCALE=$TARGET_GDK_SCALE" || fail "kiosk.env GDK_SCALE"
 
 mkdir ird && unmkinitramfs initrd.img ird

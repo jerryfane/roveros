@@ -22,6 +22,7 @@ TARGET_APKS=(
   "$PMOS/firmware-qcom-adreno-a630-20260110-r1.apk f027f4ef5d81858e33962d396ddd88a6a44120ad0f9701398324cac9fb051c92"
   "$PMOS/firmware-qcom-adreno-a630-sqe-20260110-r1.apk cc956488c3085238f069c8e37f4b8c233727e6b0154a72a9a3a3e9e96b56b9b6"
   "$PMOS/bootmac-0.7.1-r0.apk 27f54cc838228869dce78b7a83d05e76e6a3a8d53cb0b7f276353281ab2302a8"
+  "$PMOS/bootmac-systemd-0.7.1-r0.apk 439deaa4faa34e0a0700b39b152997b470c25226db50c82017118773148c8355"
   "$ALPINE/main/aarch64/linux-firmware-qca-20260519-r0.apk 6b3a815e06afe10aed121f3815bb15930f5bb76d6c45a5f96d86cc019293f63a"
   "$ALPINE/community/aarch64/msm-modem-uim-selection-13-r1.apk 75f627483b9b699e9647387cc092522bb0836af03b3c3e854109b7fb2edac783"
   "$ALPINE/community/aarch64/msm-modem-uim-selection-systemd-13-r1.apk 360f8a1c5d90e51b9f81473ed4c0998b5e6b364e0b40cc318e52fbeecbf59b83"
