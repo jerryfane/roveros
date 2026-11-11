@@ -28,7 +28,7 @@ exec qemu-system-aarch64 "${accel[@]}" -smp 4 -m 3072 \
   -device virtio-gpu-pci,xres=720,yres=1560 \
   -device qemu-xhci -device usb-kbd -device usb-tablet \
   -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:${ROVER_SSH_PORT:-2222}-:22" \
-  -device virtio-net-pci,netdev=net0 \
+  -device virtio-net-pci,netdev=net0,romfile= \
   -device virtio-rng-pci \
   -display "${ROVER_DISPLAY:-gtk}" \
   -serial stdio \
