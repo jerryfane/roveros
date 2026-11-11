@@ -1,0 +1,36 @@
+# Debian packages in the RoverOS image, on top of Debian's essential set.
+# One per line; '#' starts a comment.
+
+# Boot and system
+linux-image-arm64
+initramfs-tools
+systemd
+systemd-sysv
+systemd-timesyncd
+libpam-systemd
+dbus
+dbus-user-session
+udev
+e2fsprogs
+procps
+iproute2
+iputils-ping
+less
+
+# Network, radios, remote access
+network-manager
+wpasupplicant
+modemmanager
+bluez
+openssh-server
+nftables
+tailscale
+ca-certificates
+
+# Screen: one full-screen compositor and the web engine HerdrUp uses
+cage
+libgtk-3-0t64
+libwebkit2gtk-4.1-0
+libgl1-mesa-dri
+fonts-dejavu-core
+fonts-noto-color-emoji

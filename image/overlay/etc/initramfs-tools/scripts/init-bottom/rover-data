@@ -1,0 +1,42 @@
+#!/bin/sh
+# Mounts the data partition before systemd starts, and gives the device a
+# machine ID kept there: the root is read-only, and systemd reads
+# /etc/machine-id before it mounts anything itself. The first boot creates the
+# ID; later boots reuse it.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+
+. /scripts/functions
+
+dev=/dev/disk/by-label/rover-data
+i=0
+while [ ! -e "$dev" ] && [ $i -lt 30 ]; do
+  sleep 1
+  i=$((i + 1))
+done
+[ -e "$dev" ] || panic "RoverOS: data partition not found"
+
+# e2fsck: 0 clean, 1 fixed, 2 fixed and wants a reboot (we have not mounted
+# it yet, so carrying on is fine). 4 and above: errors remain or fsck failed.
+# Never mount such a filesystem read-write; stop in the initramfs shell.
+/sbin/e2fsck -p "$dev" >/dev/null 2>&1
+rc=$?
+[ $rc -lt 4 ] || panic "RoverOS: data partition has errors e2fsck could not fix (exit $rc)"
+/bin/rover-mount -t ext4 -o rw,noatime,nosuid,nodev "$dev" "${rootmnt}/data" ||
+  panic "RoverOS: cannot mount the data partition"
+
+id="${rootmnt}/data/machine-id"
+current=$(cat "$id" 2>/dev/null)
+# Keep a valid ID (32 lowercase hex digits); replace anything else.
+case "$current" in
+  "" | *[!0-9a-f]*) valid=no ;;
+  *) if [ ${#current} -eq 32 ]; then valid=yes; else valid=no; fi ;;
+esac
+if [ $valid = no ]; then
+  { /bin/tr -d '-' </proc/sys/kernel/random/uuid >"$id.new" && mv "$id.new" "$id"; } ||
+    panic "RoverOS: cannot create the machine ID"
+fi
+# Without the bind, systemd would invent a new ID for this boot.
+/bin/rover-mount --bind "$id" "${rootmnt}/etc/machine-id" ||
+  panic "RoverOS: cannot bind the machine ID"

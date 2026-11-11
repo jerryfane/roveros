@@ -6,7 +6,8 @@ battery, USB-C charging and a SIM. It is built on the Linux kernel and the
 the owner's other [Tailscale](https://tailscale.com) machines reach devices
 near the Rover over Bluetooth, USB and the local network.
 
-Status: planning. No phone chosen yet. See [docs/DESIGN.md](docs/DESIGN.md).
+Status: step 1 of [docs/DESIGN.md](docs/DESIGN.md). A VM image boots into
+HerdrUp full-screen at phone size. No phone chosen yet.
 
 ## Goals
 
@@ -22,3 +23,29 @@ Status: planning. No phone chosen yet. See [docs/DESIGN.md](docs/DESIGN.md).
   network. Limited by the tailnet, per-channel switches and a session log.
 - A settings panel for mobile data, Wi-Fi, hotspot, Bluetooth and devices.
 - Read-only image, reproducible builds, A/B over-the-air updates.
+
+## Build and run
+
+Needs Docker. On an x86-64 host, Linux 6.7 or later: arm64 programs run
+through qemu-user, registered only inside the build's own namespace.
+
+```sh
+tools/build.sh out        # out/rover.img, vmlinuz, initrd.img, cmdline.txt
+tools/boot-test.sh out    # boots headless, checks services, saves out/screen.png
+tools/run-vm.sh out       # boots with a 720x1560 window (needs qemu-system-aarch64)
+```
+
+The image has a read-only root and a data partition for state (Tailscale,
+network, Bluetooth pairings, SSH host key, logs, `/home`). The `rover` user
+runs HerdrUp under the `cage` compositor. SSH takes keys only and, like
+everything else, is reachable only over Tailscale.
+
+A development image opens SSH on every interface for one key, so the VM can
+be reached through the forwarded port `127.0.0.1:2222`. Never ship one:
+
+```sh
+ROVER_DEV=1 ROVER_DEV_SSH_KEY="$(cat key.pub)" tools/build.sh out
+```
+
+Not in this step: joining the tailnet (needs a Tailscale key), the panel,
+the phone's kernel, A/B updates and disk encryption.

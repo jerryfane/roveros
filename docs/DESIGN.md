@@ -263,10 +263,10 @@ research, not from testing.
 - Secrets (Tailscale state, SSH keys, eSIM data, the session log) live in an
   encrypted data area, apart from the system image.
 - A Tailscale key is entered at first-boot setup, never built into the image.
-- Base C library: the HerdrUp Desktop Linux ARM build is linked against glibc
-  (checked on `v0.1.0-preview.15`); postmarketOS uses musl. So the image uses
-  a glibc base with the phone's kernel and firmware taken from postmarketOS,
-  or HerdrUp gets a musl build.
+- Base system: Debian (glibc), because the HerdrUp Desktop Linux ARM build is
+  linked against glibc (checked on `v0.1.0-preview.15`) and postmarketOS uses
+  musl. The phone's kernel and firmware will come from its postmarketOS port.
+  The VM image uses Debian's own arm64 kernel.
 - HerdrUp, herdr and the workspace's base tools ship inside the image or as
   signed add-ons. HerdrUp's own self-update is off: it cannot write to a
   read-only image.
@@ -311,7 +311,9 @@ No purchase and no flashing is needed for steps 1 and 2.
 
 1. Kiosk image for a virtual ARM machine: boot into HerdrUp full-screen at
    phone size and connect to machines on the tailnet. Proves the base, the
-   image build and HerdrUp at phone width.
+   image build and HerdrUp at phone width. Built by `tools/build.sh` and
+   checked in CI by `tools/boot-test.sh`; joining the tailnet waits for a
+   Tailscale key.
 2. Raw access: the workspace with Bluetooth and USB passed through, SSH over
    Tailscale, USB passthrough and the LAN route, tested against real devices
    from any Linux machine. Then the Rover service and the panel.
