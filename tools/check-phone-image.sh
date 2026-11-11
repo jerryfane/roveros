@@ -71,7 +71,7 @@ for want in $(grep -ohE "SYSTEMD_WANTS\}=\"[^\"]+\"" /tmp/rules.d/*.rules | cut 
     fail "udev wants $want but the root lacks $unit"
   echo "udev unit: $want"
 done
-debugfs -R "cat /etc/rover/kiosk.env" root.ext4 2>/dev/null | grep -qx "GDK_SCALE=$TARGET_GDK_SCALE" || fail "kiosk.env GDK_SCALE"
+debugfs -R "cat /etc/rover/kiosk.env" root.ext4 2>/dev/null | grep -qx "ROVER_SCALE=$TARGET_SCALE" || fail "kiosk.env ROVER_SCALE"
 
 mkdir ird && unmkinitramfs initrd.img ird
 ls ird/main >/dev/null 2>&1 && ird=ird/main || ird=ird

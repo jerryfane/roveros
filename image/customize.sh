@@ -9,7 +9,7 @@ read -r -a state_paths <<<"$ROVER_STATE_PATHS"
 
 # The repository's owner is not mapped in this namespace.
 cp -a --no-preserve=ownership "$ROVER_IMAGE_DIR/overlay/." "$root/"
-sed -i "s/^GDK_SCALE=.*/GDK_SCALE=$ROVER_GDK_SCALE/" "$root/etc/rover/kiosk.env"
+sed -i "s/^ROVER_SCALE=.*/ROVER_SCALE=$ROVER_SCALE/" "$root/etc/rover/kiosk.env"
 
 # Kernel, modules and firmware from postmarketOS/Alpine packages (phone
 # targets). An .apk is concatenated gzip tar streams; the package's metadata

@@ -34,7 +34,7 @@ TARGET_UBOOT_SHA256=56ee9de8d92a187e5dc283689ae122dee1792af310fe8ae3796a0e6caa77
 TARGET_DTB=qcom/sm7150-xiaomi-sweet.dtb
 
 # 1080x2400 screen; scale 3 lays HerdrUp out at 360 logical px.
-TARGET_GDK_SCALE=3
+TARGET_SCALE=3
 
 # UFS storage uses 4096-byte sectors.
 TARGET_SECTOR_SIZE=4096

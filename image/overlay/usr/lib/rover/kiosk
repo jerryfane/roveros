@@ -1,0 +1,12 @@
+#!/bin/sh
+# Runs inside cage: scales every output by ROVER_SCALE, then starts HerdrUp.
+# GTK's GDK_SCALE has no effect under Wayland; the compositor's output scale
+# is what makes HerdrUp lay out at phone width (360 logical px), where its
+# phone layout applies.
+set -u
+scale=${ROVER_SCALE:-1}
+for output in $(wlr-randr | awk '/^[^ ]/ {print $1}'); do
+  wlr-randr --output "$output" --scale "$scale" ||
+    echo "rover-kiosk: could not scale $output to $scale" >&2
+done
+exec /opt/herdrup/herdrup
