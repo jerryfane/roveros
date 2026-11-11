@@ -10,9 +10,13 @@
 set -euo pipefail
 
 repo=$(cd "$(dirname "$0")/.." && pwd)
-out=$(realpath -m "${1:-$repo/out}")
-[ $# -gt 0 ] && shift
+out=$repo/out
+if [ $# -gt 0 ] && [ "$1" != -- ]; then
+  out=$1
+  shift
+fi
 [ "${1:-}" = -- ] && shift
+out=$(realpath -m "$out")
 
 accel=(-machine virt -cpu max)
 if [ "$(uname -m)" = aarch64 ] && [ -w /dev/kvm ]; then

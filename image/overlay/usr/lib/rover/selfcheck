@@ -11,9 +11,11 @@ yes_no() { if "$@" >/dev/null 2>&1; then echo yes; else echo no; fi; }
 root_ro=$(yes_no sh -c 'findmnt -no OPTIONS / | tr , "\n" | grep -qx ro')
 data=$(yes_no findmnt -n /data)
 herdrup=$(yes_no pgrep -x herdrup)
+# The running machine ID must be the one kept on the data partition.
+machine_id=$(yes_no sh -c 'grep -qE "^[0-9a-f]{32}$" /data/machine-id && cmp -s /etc/machine-id /data/machine-id')
 state() { systemctl is-active "$1" 2>/dev/null || true; }
 
-echo "ROVER-SELFCHECK root_ro=$root_ro data=$data herdrup=$herdrup" \
+echo "ROVER-SELFCHECK root_ro=$root_ro data=$data machine_id=$machine_id herdrup=$herdrup" \
   "kiosk=$(state rover-kiosk) ssh=$(state ssh) tailscaled=$(state tailscaled)" \
   "nftables=$(state nftables) network=$(state NetworkManager)"
 

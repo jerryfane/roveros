@@ -1,4 +1,5 @@
-# The root is read-only. Writable state lives on the data partition; the
-# image build appends one bind mount per state directory below.
+# The root is read-only. Writable state lives on the data partition, which the
+# initramfs checks and mounts (initramfs-tools/scripts/init-bottom/rover-data);
+# the image build appends one bind mount per state directory below.
 LABEL=rover-root / ext4 ro,noatime 0 1
-LABEL=rover-data /data ext4 rw,noatime,nosuid,nodev 0 2
+LABEL=rover-data /data ext4 rw,noatime,nosuid,nodev 0 0

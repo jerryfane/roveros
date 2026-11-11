@@ -31,16 +31,19 @@ chroot "$root" systemctl set-default graphical.target
 # Writable things the read-only root must not hold.
 ln -sf ../run/NetworkManager/resolv.conf "$root/etc/resolv.conf"
 rm -f "$root"/etc/ssh/ssh_host_*
+# The machine ID lives on the data partition; the initramfs binds it here.
 : >"$root/etc/machine-id"
 ln -sf /etc/machine-id "$root/var/lib/dbus/machine-id"
+chroot "$root" update-initramfs -u -k all
 
 if [ "${ROVER_DEV:-}" = 1 ]; then
   echo "DEVELOPMENT IMAGE: SSH open on every interface" >&2
   sed -i 's|^\(\s*\)# dev: ssh$|\1tcp dport 22 accept|' "$root/etc/nftables.conf"
-  install -d -m700 -o 1000 -g 1000 "$root/home/rover/.ssh"
+  owner=$(chroot "$root" id -u rover):$(chroot "$root" id -g rover)
+  install -d -m700 -o "${owner%:*}" -g "${owner#*:}" "$root/home/rover/.ssh"
   printf '%s\n' "${ROVER_DEV_SSH_KEY:?ROVER_DEV=1 needs ROVER_DEV_SSH_KEY}" \
     >"$root/home/rover/.ssh/authorized_keys"
-  chown 1000:1000 "$root/home/rover/.ssh/authorized_keys"
+  chown "$owner" "$root/home/rover/.ssh/authorized_keys"
   chmod 600 "$root/home/rover/.ssh/authorized_keys"
 fi
 
