@@ -9,6 +9,22 @@ read -r -a state_paths <<<"$ROVER_STATE_PATHS"
 
 # The repository's owner is not mapped in this namespace.
 cp -a --no-preserve=ownership "$ROVER_IMAGE_DIR/overlay/." "$root/"
+sed -i "s/^GDK_SCALE=.*/GDK_SCALE=$ROVER_GDK_SCALE/" "$root/etc/rover/kiosk.env"
+
+# Kernel, modules and firmware from postmarketOS/Alpine packages (phone
+# targets). An .apk is concatenated gzip tar streams; the package's metadata
+# files start with a dot. /lib is a symlink to /usr/lib in Debian.
+for apk in "$work"/apks/*.apk; do
+  [ -e "$apk" ] || continue
+  # Metadata (.PKGINFO, .SIGN.*, install scripts) sits at the top level.
+  tar -xzf "$apk" -C "$root" --ignore-zeros --keep-directory-symlink \
+    --no-same-owner --anchored --exclude='.[A-Za-z]*' --warning=no-unknown-keyword
+done
+if [ -d "$root/usr/share/mkinitfs/files" ]; then
+  install -d "$root/usr/share/rover/initramfs-files"
+  mv "$root"/usr/share/mkinitfs/files/*.files "$root/usr/share/rover/initramfs-files/"
+  rm -rf "$root/usr/share/mkinitfs"
+fi
 
 # HerdrUp Desktop. Its dependencies are in image/packages; dpkg checks them.
 # The image has dpkg but no apt.
@@ -26,6 +42,12 @@ chroot "$root" systemctl enable \
   nftables.service tailscaled.service ssh.service \
   NetworkManager.service ModemManager.service bluetooth.service \
   systemd-timesyncd.service
+# Qualcomm modem services, on phone targets.
+for unit in rmtfs.service tqftpserv.service msm-modem-uim-selection.service; do
+  if [ -e "$root/usr/lib/systemd/system/$unit" ]; then
+    chroot "$root" systemctl enable "$unit"
+  fi
+done
 chroot "$root" systemctl set-default graphical.target
 
 # Writable things the read-only root must not hold.
@@ -34,7 +56,17 @@ rm -f "$root"/etc/ssh/ssh_host_*
 # The machine ID lives on the data partition; the initramfs binds it here.
 : >"$root/etc/machine-id"
 ln -sf /etc/machine-id "$root/var/lib/dbus/machine-id"
-chroot "$root" update-initramfs -u -k all
+# Kernel: Debian's package (VM), or the one unpacked from an .apk above,
+# which installs /boot/vmlinuz without a version in its name.
+if [ -e "$root/boot/vmlinuz" ]; then
+  kver=$(ls "$root/usr/lib/modules")
+  [ "$(echo "$kver" | wc -l)" = 1 ] || { echo "customize: expected one kernel, got: $kver" >&2; exit 1; }
+  mv "$root/boot/vmlinuz" "$root/boot/vmlinuz-$kver"
+  chroot "$root" depmod -a "$kver"
+  chroot "$root" update-initramfs -c -k "$kver"
+else
+  chroot "$root" update-initramfs -u -k all
+fi
 
 if [ "${ROVER_DEV:-}" = 1 ]; then
   echo "DEVELOPMENT IMAGE: SSH open on every interface" >&2
@@ -62,6 +94,18 @@ done
 tar -C "$data" --numeric-owner -cf "$work/data.tar" .
 rm -rf "$data"
 
-# Boot files for the VM. The phone build will use the phone's own kernel.
-cp "$(ls "$root"/boot/vmlinuz-* | sort -V | tail -1)" "$work/vmlinuz"
-cp "$(ls "$root"/boot/initrd.img-* | sort -V | tail -1)" "$work/initrd.img"
+# Boot files. The VM's are loaded by qemu; a phone's go on its EFI partition,
+# laid out as postmarketOS does: U-Boot starts EFI/BOOT/BOOTAA64.EFI
+# (systemd-boot), which reads loader/entries/.
+boot="$work/boot"
+install -d "$boot"
+cp "$(ls "$root"/boot/vmlinuz-* | sort -V | tail -1)" "$boot/vmlinuz"
+cp "$(ls "$root"/boot/initrd.img-* | sort -V | tail -1)" "$boot/initrd.img"
+if [ -n "$ROVER_DTB" ]; then
+  install -D -m644 "$root/boot/dtbs/$ROVER_DTB" "$boot/dtbs/$ROVER_DTB"
+  install -D -m644 "$root/usr/lib/systemd/boot/efi/systemd-bootaa64.efi" "$boot/EFI/BOOT/BOOTAA64.EFI"
+  install -d "$boot/loader/entries"
+  printf 'default rover.conf\ntimeout 0\n' >"$boot/loader/loader.conf"
+  printf 'title RoverOS\nlinux /vmlinuz\ninitrd /initrd.img\noptions %s\n' \
+    "$ROVER_CMDLINE" >"$boot/loader/entries/rover.conf"
+fi

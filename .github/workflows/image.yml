@@ -28,3 +28,26 @@ jobs:
             out/serial.log
             out/SHA256SUMS
           if-no-files-found: ignore
+
+  sweet:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    env:
+      ROVER_TARGET: sweet
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Redmi Note 10 Pro image
+        run: tools/build.sh out-sweet
+      - name: Check its structure
+        run: tools/check-phone-image.sh out-sweet sweet
+      - name: Compress for download
+        run: zstd -q -T0 --rm out-sweet/rover.img
+      - name: Keep the image
+        uses: actions/upload-artifact@v4
+        with:
+          name: rover-sweet
+          path: |
+            out-sweet/rover.img.zst
+            out-sweet/u-boot.img
+            out-sweet/SHA256SUMS
+          retention-days: 14

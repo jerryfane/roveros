@@ -1,8 +1,7 @@
 # Debian packages in the RoverOS image, on top of Debian's essential set.
 # One per line; '#' starts a comment.
 
-# Boot and system
-linux-image-arm64
+# Boot and system. The kernel comes with the target (image/targets/).
 initramfs-tools
 systemd
 systemd-sysv
