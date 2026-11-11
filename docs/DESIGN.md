@@ -88,8 +88,10 @@ What still limits access:
   access. The LAN route is off until switched on for the current network.
 - **Session log.** The Rover records which machine connected, when, and over
   which channel. It does not record what was sent to a device.
-- **System image.** Raw access is to devices, not to the system: the image
-  stays read-only and the workspace can be wiped.
+- **System image.** The image is read-only and the workspace can be wiped.
+  This keeps the system tidy; it is not a security wall. A workspace with the
+  radios and USB passed through has enough rights that a determined process
+  could reach the rest of the Rover.
 
 Accepted risks of raw access:
 
@@ -101,6 +103,89 @@ Accepted risks of raw access:
   visiting.
 - Nothing arbitrates between agents. Two agents using the same Bluetooth
   device at once will disturb each other.
+
+Details the channels need:
+
+- **LAN without a route.** An agent can reach a device on the Rover's Wi-Fi
+  through its SSH session (port forwarding or a SOCKS proxy). This needs no
+  Tailscale settings change and has no address clashes, so it is the default.
+  The subnet route is for cases that need more.
+- **Who owns Bluetooth.** The Bluetooth service runs in the system, and the
+  workspace talks to it. Pairings are stored in the data area, so they
+  survive updates and a workspace wipe.
+- **Pairing codes.** Some devices show or ask for a code. The Rover's screen
+  shows it, and an agent can answer it from the shell.
+- **Sharing a device.** The `rover` command offers a simple claim ("I am
+  using the bike") that other agents can see. It is a courtesy, not a lock.
+- **How agents learn the Rover.** A skill file for agents on the other
+  machines: how to connect, what `rover` offers, and notes per known device
+  (address, protocol, what worked). Agents add to the notes, so the next one
+  does not start from zero. `rover` prints machine-readable output.
+- **Rover offline.** The Rover is often asleep, out of coverage or off.
+  Agents must treat that as normal and say so, not retry forever.
+
+## The Rover's own hardware
+
+The phone has devices of its own, reachable from the workspace like any other:
+
+| Hardware | Use | Note |
+|---|---|---|
+| GPS | Location for agents | Needs a privacy switch on the panel |
+| Camera | Photos and video for agents | Camera support under mainline Linux is weak on most phones |
+| Microphone and speaker | Voice input to HerdrUp (its Linux build includes speech-to-text), sound for alerts | Needs a privacy switch |
+| SMS | Agents can read and send texts through the modem | Login codes arrive by SMS, so this is sensitive: its own switch, off by default |
+| Phone calls | Out of scope | The Rover is not the owner's phone |
+| Vibration, LED | Alerts from HerdrUp | |
+
+## A device that can be lost
+
+The Rover is carried, and it holds the keys to more than itself: HerdrUp on it
+logs in to the owner's other machines over SSH.
+
+- **Its own Tailscale identity** with a tag. Access rules list exactly which
+  machines it may reach, and which may reach it. Not the keyring.
+- **SSH key for HerdrUp** lives in the encrypted data area, unlocked by the
+  PIN, and is unique to the Rover so it can be removed from every machine at
+  once.
+- **Lost-device steps**, written down before first use: remove the Rover from
+  Tailscale, remove its SSH key from the machines, block the SIM.
+- **Wipe.** Too many wrong PINs erases the data area. A remote wipe command
+  works only while the Rover is still online.
+- **Screen lock** after idle. Raw access by remote agents keeps working while
+  the screen is locked.
+
+## Power and reachability
+
+- A sleeping phone drops off Tailscale and Bluetooth. The Rover has two
+  states: **awake** (reachable, uses battery) and **asleep** (unreachable).
+- The panel sets the policy: stay awake while charging, while a session is
+  open, for a set time, or always.
+- Waking a sleeping Rover from far away is only possible by SMS or call to its
+  SIM, if the modem supports wake on the chosen phone. Untested.
+- **One USB-C port.** A device plugged into the port blocks charging. Using
+  the glasses or a USB camera for long needs a hub that passes power through,
+  and the phone must support that. Untested.
+- Charge limit (for example 80%) when the Rover sits on a charger for days.
+- Heat: a phone that is awake, on 4G and charging in a car gets hot. The
+  Rover slows down or stops charging before it overheats.
+
+## Connectivity
+
+- Wi-Fi first, mobile data when there is no Wi-Fi, switching without a
+  restart.
+- **Wi-Fi login pages** (hotels, airports) need a browser. The Rover opens
+  the page in its web engine.
+- **Data guard.** Mobile data use is counted; a limit and a roaming switch
+  stop surprise bills. Updates and large downloads wait for Wi-Fi unless
+  allowed.
+- Tailscale connections over mobile data may be relayed and slower. A relay
+  on one of the owner's machines helps.
+- **VPN rules.** Tailscale is a VPN. Its use on UAE mobile networks, and in
+  countries the owner travels to, should be checked before relying on it.
+- Clock: set from the network at boot, because secure connections fail with a
+  wrong date.
+- Hotspot clients get internet only. They do not reach the tailnet or the
+  Rover's services.
 
 ## Terminal and local agents
 
@@ -177,9 +262,27 @@ research, not from testing.
 - Secrets (Tailscale state, SSH keys, eSIM data, the session log) live in an
   encrypted data area, apart from the system image.
 - A Tailscale key is entered at first-boot setup, never built into the image.
-- Base C library: HerdrUp Desktop ships as a Debian package, so it is probably
-  built for glibc while postmarketOS uses musl (not yet checked on the binary).
-  Either the image uses a glibc base, or HerdrUp gets a musl build.
+- Base C library: the HerdrUp Desktop Linux ARM build is linked against glibc
+  (checked on `v0.1.0-preview.15`); postmarketOS uses musl. So the image uses
+  a glibc base with the phone's kernel and firmware taken from postmarketOS,
+  or HerdrUp gets a musl build.
+- HerdrUp, herdr and the workspace's base tools ship inside the image or as
+  signed add-ons. HerdrUp's own self-update is off: it cannot write to a
+  read-only image.
+- First install needs the owner's hands: unlocking the phone's bootloader and
+  flashing over USB. A recovery mode reinstalls the last good image.
+- The image-signing key is kept off the Rover and off CI logs. Where it lives
+  is to be decided.
+- Logs are capped in size so they cannot fill the storage.
+- Settings and pairings can be exported and restored, so a replaced or reset
+  Rover does not start from zero.
+
+## Testing without a phone
+
+- The image boots in a virtual ARM machine in CI.
+- Bluetooth and USB are tested with the kernel's virtual Bluetooth controller
+  and virtual USB devices, so raw access is checked on every change.
+- Modem, real radios, battery and heat can only be tested on the phone.
 
 ## Open questions
 
@@ -198,6 +301,11 @@ research, not from testing.
 | Cost of local agents | Memory and battery use of herdr plus an agent on a phone is unmeasured |
 | USB/IP and container device passthrough on the phone kernel | Both need kernel options that the phone ports may not enable; unchecked |
 | LAN route on visited networks | Address ranges of different networks can clash with each other and with the tailnet |
+| Typing | A terminal needs Ctrl, Esc, Tab and arrows on the touch keyboard. A Bluetooth or USB keyboard should also work |
+| SSH into the Rover | Tailscale's own SSH or OpenSSH. Research could not confirm that the packaged Tailscale has a recent SSH security fix |
+| Recording remote sessions | The session log does not record commands. Recording them is cheap and helps after a mistake; costs storage and some privacy |
+| License | The repository has none yet |
+| Kernel and security updates | Each phone's kernel comes from the postmarketOS port; how fast fixes arrive, and for how long, depends on that port |
 
 ## Build order
 
