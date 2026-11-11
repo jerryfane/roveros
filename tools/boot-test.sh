@@ -34,15 +34,24 @@ until grep -q "ROVER-SELFCHECK-END" /out/serial.log; do
   fi
   sleep 5
 done
+# Frames are timed from the END marker, which the guest prints 20 s after
+# HerdrUp starts; the late marker comes 160 s after that (3 min).
+t0=$(date +%s)
 shot() { # NAME: screendump to /out/NAME.ppm
   echo "screendump /out/$1.ppm" | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null
-  sleep 2
+  for _ in $(seq 20); do [ -s "/out/$1.ppm" ] && return; sleep 0.5; done
+  echo "boot-test: screendump $1 produced nothing" >&2
+  return 1
 }
-shot s20
-sleep 68
-shot s90
+shot_at() { # SECONDS_AFTER_T0 NAME
+  while [ "$(date +%s)" -lt $((t0 + $1)) ]; do sleep 1; done
+  shot "$2"
+}
+shot_at 0 s20
+shot_at 70 s90
+late=1
 until grep -q "ROVER-SELFCHECK-LATE" /out/serial.log; do
-  [ "$(date +%s)" -lt $end ] || { echo "boot-test: no late self-check" >&2; break; }
+  if [ "$(date +%s)" -ge $end ]; then late=0; break; fi
   sleep 5
 done
 shot s180
@@ -54,6 +63,10 @@ rm -f /out/s20.ppm /out/s90.ppm /out/s180.ppm
 echo quit | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null || true
 wait $vm || true
 chown '"$(id -u):$(id -g)"' /out/serial.log /out/screen.png /out/screen.colours
+if [ $late = 0 ]; then
+  echo "boot-test: FAIL: no late self-check report (ROVER-SELFCHECK-LATE)" >&2
+  exit 1
+fi
 '
 
 line=$(grep -a -o 'ROVER-SELFCHECK root_ro.*' "$out/serial.log" | tr -d '\r' | tail -1)
