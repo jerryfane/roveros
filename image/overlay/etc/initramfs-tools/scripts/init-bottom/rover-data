@@ -17,9 +17,12 @@ while [ ! -e "$dev" ] && [ $i -lt 30 ]; do
 done
 [ -e "$dev" ] || panic "RoverOS: data partition not found"
 
+# e2fsck: 0 clean, 1 fixed, 2 fixed and wants a reboot (we have not mounted
+# it yet, so carrying on is fine). 4 and above: errors remain or fsck failed.
+# Never mount such a filesystem read-write; stop in the initramfs shell.
 /sbin/e2fsck -p "$dev" >/dev/null 2>&1
 rc=$?
-[ $rc -lt 4 ] || log_warning_msg "RoverOS: e2fsck on the data partition exited $rc"
+[ $rc -lt 4 ] || panic "RoverOS: data partition has errors e2fsck could not fix (exit $rc)"
 /bin/rover-mount -t ext4 -o rw,noatime,nosuid,nodev "$dev" "${rootmnt}/data" ||
   panic "RoverOS: cannot mount the data partition"
 
@@ -31,7 +34,9 @@ case "$current" in
   *) if [ ${#current} -eq 32 ]; then valid=yes; else valid=no; fi ;;
 esac
 if [ $valid = no ]; then
-  /bin/tr -d '-' </proc/sys/kernel/random/uuid >"$id.new" && mv "$id.new" "$id"
+  { /bin/tr -d '-' </proc/sys/kernel/random/uuid >"$id.new" && mv "$id.new" "$id"; } ||
+    panic "RoverOS: cannot create the machine ID"
 fi
+# Without the bind, systemd would invent a new ID for this boot.
 /bin/rover-mount --bind "$id" "${rootmnt}/etc/machine-id" ||
-  log_warning_msg "RoverOS: cannot bind the machine ID"
+  panic "RoverOS: cannot bind the machine ID"
