@@ -226,7 +226,9 @@ access, network, terminal, system) use it. HerdrUp keeps its own look.
   category.
 
 Reference, animated: [docs/ui/dot-preview.html](ui/dot-preview.html) (open in a
-browser). Its source is `docs/ui/dot.js`; it is a mockup, not the panel's code.
+browser). It is generated from `docs/ui/dot.js`, `docs/ui/shell.{js,css}` and
+`docs/ui/fonts/` by `tools/build-ui-preview.py`; edit those, then rerun it. It
+is a mockup, not the panel's code.
 
 | Piece | Purpose |
 |---|---|
