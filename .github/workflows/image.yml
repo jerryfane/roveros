@@ -1,0 +1,30 @@
+name: image
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  vm:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the VM image
+        run: tools/build.sh out
+      - name: Boot it and check the self-check line
+        run: tools/boot-test.sh out
+      - name: Keep the screenshot and serial log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boot-test
+          path: |
+            out/screen.png
+            out/serial.log
+            out/SHA256SUMS
+          if-no-files-found: ignore

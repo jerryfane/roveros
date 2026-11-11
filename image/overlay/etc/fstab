@@ -1,0 +1,4 @@
+# The root is read-only. Writable state lives on the data partition; the
+# image build appends one bind mount per state directory below.
+LABEL=rover-root / ext4 ro,noatime 0 1
+LABEL=rover-data /data ext4 rw,noatime,nosuid,nodev 0 2

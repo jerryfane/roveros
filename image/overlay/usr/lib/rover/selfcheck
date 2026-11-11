@@ -1,0 +1,18 @@
+#!/bin/sh
+# Prints one line about the system's state, for boot tests and the serial
+# console. Waits up to two minutes for HerdrUp to start.
+i=0
+while [ $i -lt 120 ] && ! pgrep -x herdrup >/dev/null; do
+  sleep 1
+  i=$((i + 1))
+done
+
+yes_no() { if "$@" >/dev/null 2>&1; then echo yes; else echo no; fi; }
+root_ro=$(yes_no sh -c 'findmnt -no OPTIONS / | tr , "\n" | grep -qx ro')
+data=$(yes_no findmnt -n /data)
+herdrup=$(yes_no pgrep -x herdrup)
+state() { systemctl is-active "$1" 2>/dev/null || true; }
+
+echo "ROVER-SELFCHECK root_ro=$root_ro data=$data herdrup=$herdrup" \
+  "kiosk=$(state rover-kiosk) ssh=$(state ssh) tailscaled=$(state tailscaled)" \
+  "nftables=$(state nftables) network=$(state NetworkManager)"

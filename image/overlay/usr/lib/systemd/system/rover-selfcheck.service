@@ -1,0 +1,11 @@
+[Unit]
+Description=RoverOS: report system state on the console
+After=rover-kiosk.service ssh.service tailscaled.service NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/rover/selfcheck
+StandardOutput=journal+console
+
+[Install]
+WantedBy=graphical.target

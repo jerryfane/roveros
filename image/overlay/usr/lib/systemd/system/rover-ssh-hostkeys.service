@@ -1,0 +1,12 @@
+[Unit]
+Description=RoverOS: create this device's SSH host key
+Before=ssh.service
+RequiresMountsFor=/data
+ConditionPathExists=!/data/ssh/ssh_host_ed25519_key
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ssh-keygen -q -t ed25519 -N "" -C rover -f /data/ssh/ssh_host_ed25519_key
+
+[Install]
+WantedBy=ssh.service
