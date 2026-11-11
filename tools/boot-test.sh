@@ -44,7 +44,7 @@ wait $vm || true
 chown '"$(id -u):$(id -g)"' /out/serial.log /out/screen.png /out/screen.colours
 '
 
-line=$(grep -a -o 'ROVER-SELFCHECK.*' "$out/serial.log" | tr -d '\r' | tail -1)
+line=$(grep -a -o 'ROVER-SELFCHECK root_ro.*' "$out/serial.log" | tr -d '\r' | tail -1)
 echo "$line"
 expected="root_ro=yes data=yes machine_id=yes herdrup=yes kiosk=active ssh=active tailscaled=active nftables=active network=active"
 for kv in $expected; do
