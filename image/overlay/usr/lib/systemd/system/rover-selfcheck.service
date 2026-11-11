@@ -5,6 +5,8 @@ After=rover-kiosk.service ssh.service tailscaled.service NetworkManager.service
 [Service]
 Type=oneshot
 ExecStart=/usr/lib/rover/selfcheck
+# It waits up to 2 min for HerdrUp, then 3 min more for the late report.
+TimeoutStartSec=6min
 StandardOutput=journal+console
 
 [Install]

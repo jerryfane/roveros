@@ -25,8 +25,12 @@ for unit in $(systemctl list-units --failed --plain --no-legend | awk '{print $1
   systemctl status --no-pager --lines=15 "$unit" | sed 's/^/  /'
 done
 
-# What HerdrUp printed while drawing its first screen, then the end marker
-# the boot test waits for before it takes its screenshot.
+# What HerdrUp printed while drawing its first screen, then the marker the
+# boot test waits for before its first screenshot. Again 3 minutes after
+# HerdrUp started, for slow first paints (WebKit under emulation).
 sleep 20
 journalctl -b -u rover-kiosk --no-pager -o cat -n 40 | sed 's/^/ROVER-KIOSK /'
 echo "ROVER-SELFCHECK-END"
+sleep 160
+journalctl -b -u rover-kiosk --no-pager -o cat -n 60 | sed 's/^/ROVER-KIOSK-3MIN /'
+echo "ROVER-SELFCHECK-LATE"
