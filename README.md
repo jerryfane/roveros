@@ -35,6 +35,15 @@ tools/boot-test.sh out    # boots headless, checks services, saves out/screen.pn
 tools/run-vm.sh out       # boots with a 720x1560 window (needs qemu-system-aarch64)
 ```
 
+The Redmi Note 10 Pro (4G, codename `sweet`) image uses that phone's
+postmarketOS kernel and firmware. CI checks its structure but cannot boot it;
+installing is in [docs/FLASHING-SWEET.md](docs/FLASHING-SWEET.md):
+
+```sh
+ROVER_TARGET=sweet tools/build.sh out-sweet   # out-sweet/rover.img, u-boot.img
+tools/check-phone-image.sh out-sweet sweet
+```
+
 The image has a read-only root and a data partition for state (Tailscale,
 network, Bluetooth pairings, SSH host key, logs, `/home`). The `rover` user
 runs HerdrUp under the `cage` compositor. SSH takes keys only and, like
@@ -47,5 +56,5 @@ be reached through the forwarded port `127.0.0.1:2222`. Never ship one:
 ROVER_DEV=1 ROVER_DEV_SSH_KEY="$(cat key.pub)" tools/build.sh out
 ```
 
-Not in this step: joining the tailnet (needs a Tailscale key), the panel,
-the phone's kernel, A/B updates and disk encryption.
+Not done yet: joining the tailnet (needs the owner's approval), the panel,
+booting on the phone, A/B updates and disk encryption.

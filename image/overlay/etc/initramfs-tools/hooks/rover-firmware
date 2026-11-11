@@ -1,0 +1,25 @@
+#!/bin/sh
+# Copies the files a phone's kernel needs before the root is mounted (GPU and
+# display firmware, mostly) into the initramfs. The lists come from the
+# postmarketOS firmware packages (usr/share/mkinitfs/files/*.files, one path
+# per line, optionally "source:destination"); the image build keeps them in
+# /usr/share/rover/initramfs-files/. VM images have none.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+
+. /usr/share/initramfs-tools/hook-functions
+for list in /usr/share/rover/initramfs-files/*.files; do
+  [ -e "$list" ] || continue
+  grep -v '^\s*#' "$list" | while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    src=${line%%:*}
+    dest=${line#*:}
+    [ -e "$src" ] || { echo "rover-firmware: missing $src" >&2; exit 1; }
+    # copy_file returns 1 when the file is already in the initramfs; any
+    # other non-zero status is a failed copy.
+    rc=0
+    copy_file firmware "$src" "$dest" || rc=$?
+    [ $rc -le 1 ] || { echo "rover-firmware: copying $src failed ($rc)" >&2; exit 1; }
+  done || exit 1
+done
