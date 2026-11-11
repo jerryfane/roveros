@@ -44,7 +44,9 @@ work="$out/.work"
 rm -rf "$work"
 mkdir -p "$work"
 
-export DEBIAN_FRONTEND=noninteractive
+# mkfs.ext4 -d reads the tarballs through libarchive, which needs UTF-8 to
+# read some file names.
+export DEBIAN_FRONTEND=noninteractive LC_ALL=C.UTF-8
 tools=(mmdebstrap uidmap e2fsprogs libarchive13t64 fdisk curl ca-certificates zstd arch-test)
 [ "$(uname -m)" = aarch64 ] || tools+=(qemu-user-static)
 apt-get update -qq
