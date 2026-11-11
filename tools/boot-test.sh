@@ -1,8 +1,9 @@
 #!/bin/bash
 # Boots a RoverOS image headless in a throwaway container and checks it:
 # the self-check line on the serial console must report a read-only root, the
-# data partition, HerdrUp running and every service active. Saves a screenshot
-# of the Rover's screen as OUTDIR/screen.png.
+# data partition, HerdrUp running and every service active. Saves the Rover's
+# screen 20 s, 90 s and 3 min after HerdrUp starts, side by side, as
+# OUTDIR/screen.png; the 3 min one must not look blank.
 #
 # Usage: tools/boot-test.sh [OUTDIR]     (default: out/)
 # Needs Docker. Writes to the disk are discarded (qemu -snapshot).
@@ -33,12 +34,23 @@ until grep -q "ROVER-SELFCHECK-END" /out/serial.log; do
   fi
   sleep 5
 done
-echo "screendump /out/screen.ppm" | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null
-sleep 2
+shot() { # NAME: screendump to /out/NAME.ppm
+  echo "screendump /out/$1.ppm" | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null
+  sleep 2
+}
+shot s20
+sleep 68
+shot s90
+until grep -q "ROVER-SELFCHECK-LATE" /out/serial.log; do
+  [ "$(date +%s)" -lt $end ] || { echo "boot-test: no late self-check" >&2; break; }
+  sleep 5
+done
+shot s180
 # A drawn HerdrUp screen has hundreds of colours; a blank or plain screen has
 # few (blank preview.17 under cage: 79; preview.15: 804).
-ppmhist -noheader /out/screen.ppm | wc -l >/out/screen.colours
-pnmtopng /out/screen.ppm >/out/screen.png && rm -f /out/screen.ppm
+ppmhist -noheader /out/s180.ppm | wc -l >/out/screen.colours
+pnmcat -lr /out/s20.ppm /out/s90.ppm /out/s180.ppm | pnmtopng >/out/screen.png
+rm -f /out/s20.ppm /out/s90.ppm /out/s180.ppm
 echo quit | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null || true
 wait $vm || true
 chown '"$(id -u):$(id -g)"' /out/serial.log /out/screen.png /out/screen.colours
