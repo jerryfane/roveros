@@ -98,7 +98,7 @@ if [ "$esp_mb" -gt 0 ]; then
   # EFI partition: systemd-boot, the kernel, the initramfs and the device tree.
   export MTOOLS_SKIP_CHECK=1
   truncate -s "${esp_mb}M" "$work/esp.fat"
-  mkfs.vfat -q -F 32 -S "$TARGET_SECTOR_SIZE" -n ROVERBOOT "$work/esp.fat"
+  mkfs.vfat -F 32 -S "$TARGET_SECTOR_SIZE" -n ROVERBOOT "$work/esp.fat" >/dev/null
   mcopy -s -i "$work/esp.fat" "$work/boot/"* ::/
 fi
 
