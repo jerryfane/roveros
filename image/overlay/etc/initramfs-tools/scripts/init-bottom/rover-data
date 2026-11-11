@@ -17,13 +17,21 @@ while [ ! -e "$dev" ] && [ $i -lt 30 ]; do
 done
 [ -e "$dev" ] || panic "RoverOS: data partition not found"
 
-e2fsck -p "$dev" >/dev/null 2>&1
-[ $? -lt 4 ] || log_warning_msg "RoverOS: data partition has errors e2fsck could not fix"
-mount -t ext4 -o rw,noatime,nosuid,nodev "$dev" "${rootmnt}/data" ||
+/sbin/e2fsck -p "$dev" >/dev/null 2>&1
+rc=$?
+[ $rc -lt 4 ] || log_warning_msg "RoverOS: e2fsck on the data partition exited $rc"
+/bin/mount -t ext4 -o rw,noatime,nosuid,nodev "$dev" "${rootmnt}/data" ||
   panic "RoverOS: cannot mount the data partition"
 
 id="${rootmnt}/data/machine-id"
-if ! grep -qE '^[0-9a-f]{32}$' "$id" 2>/dev/null; then
-  tr -d '-' </proc/sys/kernel/random/uuid >"$id.new" && mv "$id.new" "$id"
+current=$(cat "$id" 2>/dev/null)
+# Keep a valid ID (32 lowercase hex digits); replace anything else.
+case "$current" in
+  "" | *[!0-9a-f]*) valid=no ;;
+  *) if [ ${#current} -eq 32 ]; then valid=yes; else valid=no; fi ;;
+esac
+if [ $valid = no ]; then
+  /bin/tr -d '-' </proc/sys/kernel/random/uuid >"$id.new" && mv "$id.new" "$id"
 fi
-mount --bind "$id" "${rootmnt}/etc/machine-id"
+/bin/mount --bind "$id" "${rootmnt}/etc/machine-id" ||
+  log_warning_msg "RoverOS: cannot bind the machine ID"
