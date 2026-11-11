@@ -28,6 +28,7 @@ ca-certificates
 
 # Screen: one full-screen compositor and the web engine HerdrUp uses
 cage
+wlr-randr
 libgtk-3-0t64
 libwebkit2gtk-4.1-0
 libgl1-mesa-dri

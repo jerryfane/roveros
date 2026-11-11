@@ -16,7 +16,7 @@ StandardError=journal
 UtmpIdentifier=tty1
 UtmpMode=user
 EnvironmentFile=/etc/rover/kiosk.env
-ExecStart=/usr/bin/cage -s -- /opt/herdrup/herdrup
+ExecStart=/usr/bin/cage -s -- /usr/lib/rover/kiosk
 Restart=always
 RestartSec=2
 

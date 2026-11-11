@@ -24,7 +24,7 @@ rm -f /out/serial.log /out/screen.png
 ROVER_DISPLAY=none ROVER_SNAPSHOT=1 /tools/run-vm.sh /out >/out/serial.log 2>&1 &
 vm=$!
 end=$(( $(date +%s) + ROVER_BOOT_TIMEOUT ))
-until grep -q "ROVER-SELFCHECK" /out/serial.log; do
+until grep -q "ROVER-SELFCHECK-END" /out/serial.log; do
   if ! kill -0 $vm 2>/dev/null || [ "$(date +%s)" -ge $end ] ||
      grep -q "emergency mode" /out/serial.log; then
     echo "boot-test: no self-check line; serial log in /out/serial.log" >&2
@@ -33,16 +33,18 @@ until grep -q "ROVER-SELFCHECK" /out/serial.log; do
   fi
   sleep 5
 done
-sleep 20 # let HerdrUp draw its first screen
 echo "screendump /out/screen.ppm" | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null
 sleep 2
+# A drawn HerdrUp screen has hundreds of colours; a blank or plain screen has
+# few (blank preview.17 under cage: 79; preview.15: 804).
+ppmhist -noheader /out/screen.ppm | wc -l >/out/screen.colours
 pnmtopng /out/screen.ppm >/out/screen.png && rm -f /out/screen.ppm
 echo quit | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null || true
 wait $vm || true
-chown '"$(id -u):$(id -g)"' /out/serial.log /out/screen.png
+chown '"$(id -u):$(id -g)"' /out/serial.log /out/screen.png /out/screen.colours
 '
 
-line=$(grep -a -o 'ROVER-SELFCHECK.*' "$out/serial.log" | tr -d '\r' | tail -1)
+line=$(grep -a -o 'ROVER-SELFCHECK root_ro.*' "$out/serial.log" | tr -d '\r' | tail -1)
 echo "$line"
 expected="root_ro=yes data=yes machine_id=yes herdrup=yes kiosk=active ssh=active tailscaled=active nftables=active network=active"
 for kv in $expected; do
@@ -51,4 +53,10 @@ for kv in $expected; do
     *) echo "boot-test: FAIL: expected $kv" >&2; exit 1 ;;
   esac
 done
+colours=$(cat "$out/screen.colours")
+if [ "$colours" -lt 150 ]; then
+  echo "boot-test: FAIL: the screen looks blank ($colours colours); HerdrUp log:" >&2
+  grep -a 'ROVER-KIOSK' "$out/serial.log" | tr -d '\r' >&2
+  exit 1
+fi
 echo "boot-test: PASS (screenshot: $out/screen.png)"
