@@ -15,9 +15,10 @@ else:
    devices near the Rover: over Bluetooth, USB and the local network.
 3. Shows HerdrUp on its own screen, so the owner can talk to those agents.
 
-Agents do not run on the Rover. herdr does not run on the Rover. HerdrUp on the
-Rover connects over SSH to the machines where the agents live, as it does on
-any other computer.
+Agents normally run on the other machines. HerdrUp on the Rover connects over
+SSH to those machines, as it does on any other computer. The Rover also has a
+terminal, and can run agents itself under herdr when needed (see "Terminal and
+local agents").
 
 ## Parts
 
@@ -30,6 +31,8 @@ any other computer.
 | Shell | Full-screen compositor, status bar, lock screen, first-boot setup, approval prompt, touch keyboard | RoverOS, on existing pieces |
 | HerdrUp Desktop | The app for talking to agents. It has a Linux ARM build and uses the system web engine (WebKitGTK) | Reused |
 | System services | NetworkManager and ModemManager (Wi-Fi, 4G/5G, hotspot), BlueZ (Bluetooth), lpac (eSIM), Tailscale, OpenSSH | Reused |
+| Terminal | A terminal app on the Rover's screen | Reused |
+| Workspace | An isolated area on the data partition where herdr and local agents run, started on demand | RoverOS, on herdr and a container runtime |
 
 The panel is shown in the same web engine HerdrUp uses, so the image carries
 one UI toolkit.
@@ -89,13 +92,35 @@ Rules that follow from this:
   approval rule.
 - **Maintenance.** SSH with keys, reachable over Tailscale and USB only.
 
+## Terminal and local agents
+
+The Rover has a terminal app, and can run agents on itself through herdr. This
+is for when the other machines are unreachable, or when a job is best done on
+the Rover.
+
+- **Where they run.** In the workspace: an isolated area on the data
+  partition with its own tools and packages. The system image stays read-only
+  and untouched. The workspace can be wiped and rebuilt without reinstalling
+  the Rover.
+- **herdr.** herdr ships a static Linux ARM binary, so it needs nothing from
+  the base system. With herdr running, the Rover shows up as a machine in
+  HerdrUp on the Rover's own screen and on the owner's other devices.
+- **Devices.** Local agents use the same hub tools as remote agents, with the
+  same allow-list, approval and log. Running on the Rover gives an agent no
+  extra access to radios or devices.
+- **Terminal.** It opens in the workspace by default. A system shell for
+  maintenance is separate and asks for the PIN.
+- **Off by default.** herdr and local agents start when the owner asks and
+  stop when idle, because they cost battery and memory.
+
 ## Screen
 
 | Piece | Purpose |
 |---|---|
-| HerdrUp | Talk to agents on other machines |
+| HerdrUp | Talk to agents on other machines, and on the Rover when herdr runs there |
+| Terminal | A shell in the workspace |
 | Panel | Settings and devices |
-| Status bar | Battery, signal, Wi-Fi, Tailscale, switch between HerdrUp and the panel |
+| Status bar | Battery, signal, Wi-Fi, Tailscale, switch between HerdrUp, the terminal and the panel |
 | Lock screen | PIN |
 | First-boot setup | Wi-Fi or SIM, join Tailscale by QR code, set the PIN |
 | Approval prompt | Appears over anything when an agent asks to act on a device |
@@ -137,7 +162,8 @@ Difficulty is from research, not from testing.
 - Read-only system image, built in CI from this repository, signed.
 - Two system slots (A/B). An update writes the other slot and switches to it;
   a failed boot switches back.
-- No package manager and no compiler on the device.
+- No package manager and no compiler in the system image. Those exist only
+  inside the workspace.
 - Secrets (Tailscale state, SSH keys, eSIM data, the call log) live in an
   encrypted data area, apart from the system image.
 - A Tailscale key is entered at first-boot setup, never built into the image.
@@ -157,6 +183,9 @@ Difficulty is from research, not from testing.
 | Tailscale over UAE mobile data | Sources disagree; needs a test |
 | Disk encryption and unattended reboot | A fully encrypted phone cannot be unlocked remotely on today's postmarketOS |
 | HerdrUp Desktop at phone width with touch | It derives from the mobile app, so the layouts should fit; needs a first run to confirm |
+| Model access for local agents | Agents on the Rover need model credentials. A carried device can be lost, so what it may hold or reach (the keyring included) needs a decision |
+| Terminal app | HerdrUp's own terminal pointed at the Rover may be enough; otherwise a small separate terminal app |
+| Cost of local agents | Memory and battery use of herdr plus an agent on a phone is unmeasured |
 
 ## Build order
 
@@ -170,3 +199,4 @@ No purchase and no flashing is needed for steps 1 and 2.
 3. Choose the phone. Bring the image up on it: modem, Wi-Fi, Bluetooth, USB,
    screen, touch.
 4. A/B updates, encrypted data area, first-boot setup, lock screen.
+5. Terminal, workspace and herdr for local agents.

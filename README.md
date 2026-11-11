@@ -15,7 +15,8 @@ Status: planning. No phone chosen yet. See [docs/DESIGN.md](docs/DESIGN.md).
 - Bluetooth and USB devices: fitness equipment, XREAL glasses, car OBD-II
   dongles, health sensors, cameras, TVs.
 - HerdrUp on the Rover's own screen, to talk to agents on other machines.
-  Agents and herdr do not run on the Rover.
+- A terminal, and optionally agents on the Rover itself under herdr, kept in
+  an isolated workspace.
 - A hub service: a fixed list of device actions, an allow-list of devices,
   an audit log, and owner approval for anything that acts on a device.
 - A settings panel for mobile data, Wi-Fi, hotspot, Bluetooth and devices.
