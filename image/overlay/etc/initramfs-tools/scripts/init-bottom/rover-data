@@ -20,7 +20,7 @@ done
 /sbin/e2fsck -p "$dev" >/dev/null 2>&1
 rc=$?
 [ $rc -lt 4 ] || log_warning_msg "RoverOS: e2fsck on the data partition exited $rc"
-/bin/mount -t ext4 -o rw,noatime,nosuid,nodev "$dev" "${rootmnt}/data" ||
+/bin/rover-mount -t ext4 -o rw,noatime,nosuid,nodev "$dev" "${rootmnt}/data" ||
   panic "RoverOS: cannot mount the data partition"
 
 id="${rootmnt}/data/machine-id"
@@ -33,5 +33,5 @@ esac
 if [ $valid = no ]; then
   /bin/tr -d '-' </proc/sys/kernel/random/uuid >"$id.new" && mv "$id.new" "$id"
 fi
-/bin/mount --bind "$id" "${rootmnt}/etc/machine-id" ||
+/bin/rover-mount --bind "$id" "${rootmnt}/etc/machine-id" ||
   log_warning_msg "RoverOS: cannot bind the machine ID"

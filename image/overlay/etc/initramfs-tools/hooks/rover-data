@@ -6,5 +6,7 @@ case "$1" in prereqs) prereqs; exit 0 ;; esac
 
 . /usr/share/initramfs-tools/hook-functions
 copy_exec /usr/sbin/e2fsck /sbin
-copy_exec /usr/bin/mount /bin
+# util-linux mount under its own name: the initramfs's /bin/mount (klibc)
+# cannot bind-mount, and copy_exec does not replace an existing file.
+copy_exec /usr/bin/mount /bin/rover-mount
 copy_exec /usr/bin/tr /bin
