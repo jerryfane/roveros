@@ -16,3 +16,9 @@ state() { systemctl is-active "$1" 2>/dev/null || true; }
 echo "ROVER-SELFCHECK root_ro=$root_ro data=$data herdrup=$herdrup" \
   "kiosk=$(state rover-kiosk) ssh=$(state ssh) tailscaled=$(state tailscaled)" \
   "nftables=$(state nftables) network=$(state NetworkManager)"
+
+# Explain failures on the console, where the boot test can see them.
+for unit in $(systemctl list-units --failed --plain --no-legend | awk '{print $1}'); do
+  echo "ROVER-FAILED $unit"
+  systemctl status --no-pager --lines=15 "$unit" | sed 's/^/  /'
+done

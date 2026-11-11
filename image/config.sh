@@ -24,6 +24,7 @@ STATE_PATHS=(
   /var/lib/bluetooth
   /var/lib/tailscale
   /var/lib/systemd
+  /var/cache
   /var/log
   /var/tmp
 )
