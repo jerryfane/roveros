@@ -289,10 +289,10 @@ research, not from testing.
 
 | Question | Why it matters |
 |---|---|
-| Which phone | Research found no phone that does everything cleanly. Fairphone 5 does the most on paper but has open bugs (USB host after charging, standby drain). OnePlus 6T is cheap and well supported but has no video out, no eSIM and weak USB host |
-| Must the Rover show a picture in the glasses | If yes, video out over USB-C is required and narrows the phone choice more than anything else |
-| Battery | The Rover must stay awake to stay reachable. No published numbers for that on the candidate phones |
-| eSIM with du and e& | No report found that their profiles install with lpac, on a built-in chip or a removable eSIM card. A physical SIM works either way |
+| First phone | Bought by the owner on 2026-11-11: Redmi Note 10 Pro, 4G version (codename `sweet`, Snapdragon 732G, 8 GB), refurbished. Its postmarketOS page marks mobile data, Wi-Fi, Bluetooth, USB host and GPU as working; battery is "partial" and suspend is undocumented. Audio and camera do not work. Untested by us |
+| Glasses picture and eSIM | Dropped for the first phone (owner, 2026-11-11). It has no video out and no eSIM; a physical SIM is used |
+| Battery | The Rover must stay awake to stay reachable. No published numbers for that on the chosen phone |
+| eSIM with du and e& | Deferred with eSIM. No report found that their profiles install with lpac |
 | 5G | 4G is reported working on the candidates; 5G under mainline Linux is unconfirmed |
 | Disk encryption and unattended reboot | A fully encrypted phone cannot be unlocked remotely on today's postmarketOS |
 | HerdrUp Desktop at phone width with touch | It derives from the mobile app, so the layouts should fit; needs a first run to confirm |
