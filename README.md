@@ -17,7 +17,8 @@ Status: planning. No phone chosen yet. See [docs/DESIGN.md](docs/DESIGN.md).
 - HerdrUp on the Rover's own screen, to talk to agents on other machines.
 - A terminal, and optionally agents on the Rover itself under herdr, kept in
   an isolated workspace.
-- A hub service: a fixed list of device actions, an allow-list of devices,
-  an audit log, and owner approval for anything that acts on a device.
+- Raw access for agents: a shell on the Rover with Bluetooth, USB and network
+  passed through, USB passthrough to other machines, and a route to the local
+  network. Limited by the tailnet, per-channel switches and a session log.
 - A settings panel for mobile data, Wi-Fi, hotspot, Bluetooth and devices.
 - Read-only image, reproducible builds, A/B over-the-air updates.
