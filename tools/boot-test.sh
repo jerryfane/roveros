@@ -25,7 +25,8 @@ ROVER_DISPLAY=none ROVER_SNAPSHOT=1 /tools/run-vm.sh /out >/out/serial.log 2>&1 
 vm=$!
 end=$(( $(date +%s) + ROVER_BOOT_TIMEOUT ))
 until grep -q "ROVER-SELFCHECK" /out/serial.log; do
-  if ! kill -0 $vm 2>/dev/null || [ "$(date +%s)" -ge $end ]; then
+  if ! kill -0 $vm 2>/dev/null || [ "$(date +%s)" -ge $end ] ||
+     grep -q "emergency mode" /out/serial.log; then
     echo "boot-test: no self-check line; serial log in /out/serial.log" >&2
     kill $vm 2>/dev/null || true
     exit 1

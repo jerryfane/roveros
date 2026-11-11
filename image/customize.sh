@@ -46,6 +46,7 @@ fi
 
 # The data partition: its state directories start as copies of the root's,
 # and are bind-mounted over them at boot.
+install -d "$root/data"
 data="$work/data"
 rm -rf "$data"
 install -d -m700 "$data/ssh"
