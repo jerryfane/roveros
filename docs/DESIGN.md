@@ -210,6 +210,24 @@ the Rover.
 
 ## Screen
 
+### Visual style: Dot
+
+Chosen by the owner on 2026-11-11, from four proposals. RoverOS's own screens
+(boot, lock, first start, home, quick panel, nearby devices, device live, raw
+access, network, terminal, system) use it. HerdrUp keeps its own look.
+
+- Pure black, white ink, one red accent used only for "live" (a device in use,
+  an open session, the newest sample of a chart).
+- Display text and big numbers in the dot-matrix typeface Doto (round dots,
+  weight 900); body text in Inter.
+- Screens are built from widgets around one live hero, not lists: dot clock,
+  dot-grid radar of nearby devices, dotted gauges and charts.
+- Switches that are on are white. Cards are neutral; colour never marks a
+  category.
+
+Reference, animated: [docs/ui/dot-preview.html](ui/dot-preview.html) (open in a
+browser). Its source is `docs/ui/dot.js`; it is a mockup, not the panel's code.
+
 | Piece | Purpose |
 |---|---|
 | HerdrUp | Talk to agents on other machines, and on the Rover when herdr runs there |
