@@ -133,7 +133,7 @@ The phone has devices of its own, reachable from the workspace like any other:
 | GPS | Location for agents | Needs a privacy switch on the panel |
 | Camera | Photos and video for agents | Camera support under mainline Linux is weak on most phones |
 | Microphone and speaker | Voice input to HerdrUp (its Linux build includes speech-to-text), sound for alerts | Needs a privacy switch |
-| SMS | Agents can read and send texts through the modem | Login codes arrive by SMS, so this is sensitive: its own switch, off by default |
+| SMS | Agents can read and send texts through the modem | Wanted, low priority. Login codes arrive by SMS, so this is sensitive: its own switch, off by default |
 | Phone calls | Out of scope | The Rover is not the owner's phone |
 | Vibration, LED | Alerts from HerdrUp | |
 
@@ -142,8 +142,9 @@ The phone has devices of its own, reachable from the workspace like any other:
 The Rover is carried, and it holds the keys to more than itself: HerdrUp on it
 logs in to the owner's other machines over SSH.
 
-- **Its own Tailscale identity** with a tag. Access rules list exactly which
-  machines it may reach, and which may reach it. Not the keyring.
+- **Its own Tailscale identity** with a tag. The Rover may reach any of the
+  owner's machines where agents run (owner decision, 2026-11-11), so a lost
+  Rover is a risk to all of them until it is removed.
 - **SSH key for HerdrUp** lives in the encrypted data area, unlocked by the
   PIN, and is unique to the Rover so it can be removed from every machine at
   once.
@@ -180,8 +181,8 @@ logs in to the owner's other machines over SSH.
   allowed.
 - Tailscale connections over mobile data may be relayed and slower. A relay
   on one of the owner's machines helps.
-- **VPN rules.** Tailscale is a VPN. Its use on UAE mobile networks, and in
-  countries the owner travels to, should be checked before relying on it.
+- Tailscale works on UAE mobile data (owner, 2026-11-11). Other countries are
+  unchecked.
 - Clock: set from the network at boot, because secure connections fail with a
   wrong date.
 - Hotspot clients get internet only. They do not reach the tailnet or the
@@ -293,7 +294,6 @@ research, not from testing.
 | Battery | The Rover must stay awake to stay reachable. No published numbers for that on the candidate phones |
 | eSIM with du and e& | No report found that their profiles install with lpac, on a built-in chip or a removable eSIM card. A physical SIM works either way |
 | 5G | 4G is reported working on the candidates; 5G under mainline Linux is unconfirmed |
-| Tailscale over UAE mobile data | Sources disagree; needs a test |
 | Disk encryption and unattended reboot | A fully encrypted phone cannot be unlocked remotely on today's postmarketOS |
 | HerdrUp Desktop at phone width with touch | It derives from the mobile app, so the layouts should fit; needs a first run to confirm |
 | Model access for local agents | Agents on the Rover need model credentials. A carried device can be lost, so what it may hold or reach (the keyring included) needs a decision |
@@ -303,8 +303,6 @@ research, not from testing.
 | LAN route on visited networks | Address ranges of different networks can clash with each other and with the tailnet |
 | Typing | A terminal needs Ctrl, Esc, Tab and arrows on the touch keyboard. A Bluetooth or USB keyboard should also work |
 | SSH into the Rover | Tailscale's own SSH or OpenSSH. Research could not confirm that the packaged Tailscale has a recent SSH security fix |
-| Recording remote sessions | The session log does not record commands. Recording them is cheap and helps after a mistake; costs storage and some privacy |
-| License | The repository has none yet |
 | Kernel and security updates | Each phone's kernel comes from the postmarketOS port; how fast fixes arrive, and for how long, depends on that port |
 
 ## Build order
