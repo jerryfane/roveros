@@ -17,6 +17,11 @@
 
 ---
 
+<p align="center">
+  <a href="docs/assets/roveros-teaser.mp4"><img src="docs/assets/teaser.gif" alt="RoverOS teaser: the Dot screens in motion" width="100%"></a>
+  <br><sub>▶ <a href="docs/assets/roveros-teaser.mp4">Watch the 30-second teaser with sound</a> (MP4, 6 MB)</sub>
+</p>
+
 In 2014 a video game imagined a phone that could read a whole city. RoverOS is
 the real, smaller, useful version: a phone that stays on your private network
 and hands your agents the devices near it.
