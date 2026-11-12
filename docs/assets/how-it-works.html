@@ -1,0 +1,54 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Doto;font-weight:400 900;src:url(../ui/fonts/doto.woff2)}
+@font-face{font-family:Inter;font-weight:400 700;src:url(../ui/fonts/inter.woff2)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1600px;height:720px;background:#000;color:#fff;font-family:Inter,sans-serif;position:relative;overflow:hidden}
+.grid{position:absolute;inset:0;background-image:radial-gradient(#1c1c20 1.4px,transparent 1.6px);background-size:22px 22px}
+.col{position:absolute;top:96px;bottom:72px;display:flex;flex-direction:column;gap:18px}
+.label{font:600 13px Inter;letter-spacing:.16em;color:#77777d;text-transform:uppercase;margin-bottom:6px}
+.card{background:#0e0e10;border:1px solid #2a2a2e;border-radius:22px;padding:22px 24px}
+.card b{display:block;font-size:22px;font-weight:600}
+.card i{display:block;font-style:normal;font-size:15px;color:#8a8a90;margin-top:4px}
+.rover{position:absolute;left:630px;top:96px;width:340px;height:552px;border:1px solid #3a3a3e;border-radius:44px;background:#050506;padding:30px 26px;display:flex;flex-direction:column;gap:16px}
+.rover .t{font:900 58px Doto;font-variation-settings:'ROND' 100;letter-spacing:.02em;line-height:1;margin:8px 0 6px}
+.rover .card{border-radius:18px}
+.live{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff2d2d;margin-right:8px;vertical-align:2px}
+svg{position:absolute;inset:0;z-index:0}.col,.rover{z-index:1}
+.edge{font:600 14px Inter;fill:#c8c8cc;letter-spacing:.04em;paint-order:stroke;stroke:#000;stroke-width:10px;stroke-linejoin:round}
+.cap{position:absolute;left:96px;right:96px;bottom:28px;font-size:15px;color:#77777d}
+</style></head><body>
+<div class="grid"></div>
+<svg id="wires" width="1600" height="720"></svg>
+<div class="col" style="left:96px;width:384px;justify-content:center">
+  <div class="label">Your machines · on your tailnet</div>
+  <div class="card" id="a1"><b>Agent on a home server</b><i>coach · reads the bike</i></div>
+  <div style="height:56px"></div>
+  <div class="card" id="a2"><b>Agent on a cloud box</b><i>car · reads the OBD port</i></div>
+</div>
+<div class="rover">
+  <div class="label" style="margin:0">The Rover · in your pocket</div>
+  <div class="t">ROVER</div>
+  <div class="card" id="ws"><b>SSH workspace</b><i>Bluetooth, USB, serial and network passed through</i></div>
+  <div class="card"><b><span class="live"></span>One kill switch</b><i>cuts every agent off</i></div>
+  <div class="card"><b>HerdrUp</b><i>talk to your agents on its screen</i></div>
+</div>
+<div class="col" style="left:1120px;width:384px;justify-content:center">
+  <div class="label">Devices near you</div>
+  <div class="card" id="d1"><b>Bike · heart-rate strap</b><i>OBD dongle</i></div>
+  <div class="card" id="d2"><b>Camera · glasses</b><i>through a USB-C hub</i></div>
+  <div class="card" id="d3"><b>TV · cameras</b><i>on the Wi-Fi you're on</i></div>
+</div>
+<script>
+document.fonts.ready.then(()=>{const r=id=>document.getElementById(id).getBoundingClientRect(), S=document.getElementById("wires"), NS="http://www.w3.org/2000/svg";
+const ws=r("ws"), rv=document.querySelector(".rover").getBoundingClientRect();
+const wire=(x1,y1,x2,y2,label,lx,ly)=>{const p=document.createElementNS(NS,"path"),mx=(x1+x2)/2;p.setAttribute("d",`M${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);p.setAttribute("stroke","#fff");p.setAttribute("stroke-width","2");p.setAttribute("fill","none");p.setAttribute("stroke-dasharray","1 8");p.setAttribute("stroke-linecap","round");S.appendChild(p);
+ for(const [x,y] of [[x1,y1],[x2,y2]]){const c=document.createElementNS(NS,"circle");c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r","4");c.setAttribute("fill","#fff");S.appendChild(c);}
+ if(label){const t=document.createElementNS(NS,"text");t.setAttribute("x",lx);t.setAttribute("y",ly);t.setAttribute("text-anchor","middle");t.setAttribute("class","edge");t.textContent=label;S.appendChild(t);}};
+const wy=ws.top+ws.height/2;
+for(const id of ["a1","a2"]){const a=r(id);wire(a.right,a.top+a.height/2,rv.left,wy);}
+const L=r("a1"),A2=r("a2");const t=document.createElementNS(NS,"text");t.setAttribute("x",(L.right+rv.left)/2);t.setAttribute("y",L.top+L.height/2-14);t.setAttribute("text-anchor","middle");t.setAttribute("class","edge");t.textContent="SSH · Tailscale";S.appendChild(t);
+[["d1","Bluetooth"],["d2","USB"],["d3","Wi-Fi / LAN"]].forEach(([id,lab])=>{const d=r(id),y=d.top+d.height/2;wire(rv.right,wy,d.left-(lab.length*8+40),y);const h=document.createElementNS(NS,'path');h.setAttribute('d',`M${d.left-(lab.length*8+40)} ${y} L ${d.left} ${y}`);h.setAttribute('stroke','#fff');h.setAttribute('stroke-width','2');h.setAttribute('stroke-dasharray','1 8');h.setAttribute('stroke-linecap','round');S.appendChild(h);const tt=document.createElementNS(NS,"text");tt.setAttribute("x",d.left-22);tt.setAttribute("y",y+5);tt.setAttribute("text-anchor","end");tt.setAttribute("class","edge");tt.textContent=lab;S.appendChild(tt);});
+document.body.dataset.ready=1;});
+</script></body></html>
