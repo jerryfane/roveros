@@ -35,22 +35,9 @@ means. One switch on the Rover cuts them all off.
 
 ## How it works
 
-```mermaid
-flowchart LR
-  subgraph home[Your machines, anywhere on your tailnet]
-    A1[agent on a home server]
-    A2[agent on a cloud box]
-  end
-  subgraph rover[The Rover, in your pocket]
-    S[SSH workspace]
-    K[one kill switch]
-  end
-  A1 -- SSH over Tailscale --> S
-  A2 -- SSH over Tailscale --> S
-  S -- Bluetooth --> B[bike · heart-rate strap · OBD dongle]
-  S -- USB --> U[camera · glasses]
-  S -- Wi-Fi / LAN --> L[TV · cameras]
-```
+<p align="center">
+  <img src="docs/assets/how-it-works.png" alt="Agents on your machines reach the Rover over SSH on Tailscale; the Rover reaches nearby devices over Bluetooth, USB and Wi-Fi" width="100%">
+</p>
 
 - **Agents don't run on the Rover.** They run where they already live and reach
   the Rover over [Tailscale](https://tailscale.com). It works over 4G as well as
