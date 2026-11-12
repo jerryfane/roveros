@@ -68,7 +68,7 @@ flowchart LR
 
 ## What makes it an OS, not an app
 
-| | |
+| Property | What it means |
 |---|---|
 | **Read-only system** | The root filesystem is mounted read-only. State lives on a separate data partition: Tailscale, Wi-Fi, Bluetooth pairings, SSH host key, logs. |
 | **One purpose** | No desktop, no app store, no package manager on the device. It boots into one full-screen app under the [cage](https://github.com/cage-kiosk/cage) compositor. |
@@ -80,7 +80,7 @@ flowchart LR
 
 RoverOS is being built in public. It does not run on a real phone yet.
 
-| | |
+| Piece | Where it stands |
 |---|---|
 | ✅ Image that boots into HerdrUp, full-screen at phone size | Runs in a virtual phone; checked on every change |
 | ✅ Read-only root, data partition, persistent device identity | |
