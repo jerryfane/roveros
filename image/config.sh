@@ -4,8 +4,8 @@ DEBIAN_SUITE=trixie
 DEBIAN_MIRROR=http://deb.debian.org/debian
 
 # HerdrUp Desktop, the app on the Rover's screen.
-HERDRUP_URL=https://github.com/jerryfane/herdrup-desktop/releases/download/v0.1.0-preview.17/herdrup_0.1.0.preview.17_arm64.deb
-HERDRUP_SHA256=0610ba499dfc6033cc68f18649a2fb97ad6f6dff9d983ce8287ae114036b4d41
+HERDRUP_URL=https://github.com/jerryfane/herdrup-desktop/releases/download/v0.1.0-preview.18/herdrup_0.1.0.preview.18_arm64.deb
+HERDRUP_SHA256=1a98e50298b9dc800d7ef5d39d932e4346c2a06ed2d4d42cbe3c20aa73634dcf
 
 # Tailscale's Debian repository and its signing key.
 TAILSCALE_KEY_URL=https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg
