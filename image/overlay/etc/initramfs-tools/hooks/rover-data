@@ -10,3 +10,7 @@ copy_exec /usr/sbin/e2fsck /sbin
 # cannot bind-mount, and copy_exec does not replace an existing file.
 copy_exec /usr/bin/mount /bin/rover-mount
 copy_exec /usr/bin/tr /bin
+# scripts/local-top/rover-nested: util-linux losetup for --partscan and
+# --sector-size, and the loop driver if it is a module.
+copy_exec /usr/sbin/losetup /bin/rover-losetup
+manual_add_modules loop
