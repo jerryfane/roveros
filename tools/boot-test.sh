@@ -22,7 +22,7 @@ docker run --rm \
 set -euo pipefail
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-  qemu-system-arm qemu-utils socat netpbm python3-minimal >/dev/null
+  qemu-system-arm qemu-utils socat netpbm python3 >/dev/null
 rm -f /out/serial.log /out/screen.png
 disk=/out/rover.img
 if [ "$ROVER_BOOT_NESTED" = 1 ]; then
