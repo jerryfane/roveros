@@ -64,7 +64,7 @@ done
 # Every systemd unit a udev rule asks for must exist (name@.service for
 # templates).
 debugfs -R "rdump /usr/lib/udev/rules.d /tmp" root.ext4 2>/dev/null
-for want in $(grep -ohE "SYSTEMD_WANTS\}=\"[^\"]+\"" /tmp/rules.d/*.rules | cut -d\" -f2 | tr " " "\n" | sort -u); do
+for want in $(grep -ohE "SYSTEMD_WANTS\}\+?=\"[^\"]+\"" /tmp/rules.d/*.rules | cut -d\" -f2 | tr " " "\n" | sort -u); do
   unit=$want
   case "$want" in *@*.service) unit="${want%%@*}@.service" ;; esac
   debugfs -R "stat /usr/lib/systemd/system/$unit" root.ext4 2>/dev/null | grep -q "^Inode:" ||

@@ -1,0 +1,35 @@
+#!/bin/sh
+# Presents the Rover as a network adapter (CDC NCM) on its USB-C port, so a
+# computer on the other end of the cable can SSH in: the Rover is 172.16.42.1,
+# the computer sets 172.16.42.2/24 on its side. Only SSH is let in on this
+# link (/etc/nftables.conf). Started by udev when a USB device controller
+# appears, so it does nothing on the VM, which has none.
+set -eu
+
+udc=${1:-$(ls /sys/class/udc 2>/dev/null | head -n1)}
+[ -n "$udc" ] || { echo "rover-usb: no USB device controller" >&2; exit 0; }
+
+cfg=/sys/kernel/config
+modprobe libcomposite 2>/dev/null || true
+mountpoint -q "$cfg" || mount -t configfs none "$cfg"
+g=$cfg/usb_gadget/rover
+if [ ! -d "$g" ]; then
+  mkdir "$g"
+  echo 0x1d6b >"$g/idVendor"   # Linux Foundation
+  echo 0x0104 >"$g/idProduct"  # Multifunction Composite Gadget
+  mkdir "$g/strings/0x409"
+  echo RoverOS >"$g/strings/0x409/manufacturer"
+  echo Rover >"$g/strings/0x409/product"
+  cut -c1-16 /etc/machine-id >"$g/strings/0x409/serialnumber"
+  mkdir "$g/functions/ncm.usb0"
+  mkdir -p "$g/configs/c.1/strings/0x409"
+  echo "USB network" >"$g/configs/c.1/strings/0x409/configuration"
+  ln -s "$g/functions/ncm.usb0" "$g/configs/c.1/"
+fi
+[ -n "$(cat "$g/UDC")" ] || echo "$udc" >"$g/UDC"
+
+# NetworkManager leaves gadget interfaces alone, so the address is set here.
+ifname=$(cat "$g/functions/ncm.usb0/ifname")
+ip address replace 172.16.42.1/24 dev "$ifname"
+ip link set "$ifname" up
+echo "rover-usb: $ifname is 172.16.42.1 on $udc"

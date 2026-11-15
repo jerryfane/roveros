@@ -115,7 +115,10 @@ ROVER_TARGET=sweet tools/build.sh out-sweet
 tools/check-phone-image.sh out-sweet sweet
 ```
 
-Then follow [docs/FLASHING-SWEET.md](docs/FLASHING-SWEET.md). It erases the phone.
+Then follow [docs/FLASHING-SWEET.md](docs/FLASHING-SWEET.md). It erases the
+phone. `tools/add-ssh-key.sh` lets your key in before flashing; afterwards the
+phone shows up as a network adapter on its USB cable, and you can
+`ssh rover@172.16.42.1`.
 
 <details>
 <summary>Development images</summary>

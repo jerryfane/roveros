@@ -1,0 +1,2 @@
+# Start the USB network gadget once a USB device controller exists (phones).
+SUBSYSTEM=="udc", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_WANTS}+="rover-usb-gadget.service"
