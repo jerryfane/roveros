@@ -18,6 +18,10 @@ jobs:
         run: tools/build.sh out
       - name: Boot it and check the self-check line
         run: tools/boot-test.sh out
+      - name: Boot it again from inside a userdata partition, as on a phone
+        env:
+          ROVER_BOOT_NESTED: "1"
+        run: tools/boot-test.sh out
       - name: Keep the screenshot and serial log
         if: always()
         uses: actions/upload-artifact@v4
