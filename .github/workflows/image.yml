@@ -29,25 +29,29 @@ jobs:
             out/SHA256SUMS
           if-no-files-found: ignore
 
-  sweet:
+  phone:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [sweet, surya, davinci, tucana]
     env:
-      ROVER_TARGET: sweet
+      ROVER_TARGET: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build the Redmi Note 10 Pro image
-        run: tools/build.sh out-sweet
+      - name: Build the ${{ matrix.target }} image
+        run: tools/build.sh out-${{ matrix.target }}
       - name: Check its structure
-        run: tools/check-phone-image.sh out-sweet sweet
+        run: tools/check-phone-image.sh out-${{ matrix.target }} ${{ matrix.target }}
       - name: Compress for download
-        run: zstd -q -T0 --rm out-sweet/rover.img
+        run: zstd -q -T0 --rm out-${{ matrix.target }}/rover.img
       - name: Keep the image
         uses: actions/upload-artifact@v4
         with:
-          name: rover-sweet
+          name: rover-${{ matrix.target }}
           path: |
-            out-sweet/rover.img.zst
-            out-sweet/u-boot.img
-            out-sweet/SHA256SUMS
+            out-${{ matrix.target }}/rover.img.zst
+            out-${{ matrix.target }}/u-boot-*.img
+            out-${{ matrix.target }}/SHA256SUMS
           retention-days: 14
