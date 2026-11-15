@@ -3,7 +3,7 @@
 #
 # Usage: tools/build.sh [OUTDIR]     (default: out/)
 # Needs Docker. On a non-arm64 host, Linux 6.7 or later (see image/build.sh).
-# Passed through: ROVER_TARGET (vm or sweet, see image/targets/), and
+# Passed through: ROVER_TARGET (vm or a phone, see image/targets/), and
 # ROVER_DEV=1 with ROVER_DEV_SSH_KEY for development images.
 set -euo pipefail
 
