@@ -11,7 +11,7 @@
   <a href="#status">Status: building in public</a> ·
   <a href="docs/DESIGN.md">Design</a> ·
   <a href="#build-it">Build it</a> ·
-  <a href="docs/FLASHING-SWEET.md">Flash a phone</a> ·
+  <a href="docs/FLASHING-SM7150.md">Flash a phone</a> ·
   <a href="LICENSE">Apache-2.0</a>
 </p>
 
@@ -77,8 +77,8 @@ RoverOS is being built in public. It does not run on a real phone yet.
 | ✅ Image that boots into HerdrUp, full-screen at phone size | Runs in a virtual phone; checked on every change |
 | ✅ Read-only root, data partition, persistent device identity | |
 | ✅ Tailscale, key-only SSH, firewall that only trusts the tailnet | Joining a real tailnet waits for the first phone |
-| ✅ Flashable image for the Redmi Note 10 Pro | Builds and passes structure checks; not booted on hardware yet |
-| 🚧 First boot on the phone | Phone bought; next is Xiaomi's bootloader unlock |
+| ✅ Flashable images for four Snapdragon 730/732G Xiaomi phones | Build and pass structure checks; not booted on hardware yet |
+| 🚧 First boot on a phone | The first phone delivered was the wrong model (a MediaTek 5G one); waiting for a replacement |
 | 🚧 Raw device access for agents | Next |
 | ⏳ The Rover's own screens (panel, lock, home) | Designed, see above |
 | ⏳ A/B updates, disk encryption, first-boot setup | Later |
@@ -88,14 +88,23 @@ The full plan, open questions and every decision are in
 
 ## Hardware
 
-The first target is the **Redmi Note 10 Pro, 4G version** (codename `sweet`,
-Snapdragon 732G, model M2101K6G), because its postmarketOS port has mobile data,
-Wi-Fi, Bluetooth, USB host and GPU working, and it costs under 600 AED
-refurbished. Not the "Redmi Note 10 Pro 5G": that is a different phone.
+RoverOS runs on phones whose [postmarketOS](https://wiki.postmarketos.org/wiki/Devices)
+port has mobile data, Wi-Fi, Bluetooth, USB host and GPU working. Today that
+means the Xiaomi phones built on the Snapdragon 730/732G (SM7150), which share
+one kernel:
 
-More phones can be added as targets in [`image/targets/`](image/targets). The
-best candidates are phones with a mature [postmarketOS](https://wiki.postmarketos.org/wiki/Devices)
-port.
+| Phone | Target | Model |
+|---|---|---|
+| Redmi Note 10 Pro, 4G version | `sweet` | M2101K6G |
+| POCO X3 NFC | `surya` | M2007J20CG, M2007J20CI |
+| Mi 9T / Redmi K20 | `davinci` | M1903F10G, M1903F10A, M1903F10C |
+| Mi Note 10 / Mi CC9 Pro | `tucana` | M1910F4G, M1910F4E |
+
+Check the model inside the phone, not the box: the Redmi Note 10 Pro 5G and
+the POCO X3 Pro look alike and will not work. None of these has booted
+RoverOS on real hardware yet.
+
+More phones are added as files in [`image/targets/`](image/targets).
 
 ## Build it
 
@@ -108,14 +117,14 @@ tools/boot-test.sh out    # boot it headless, check services, save screenshots
 tools/run-vm.sh out       # boot it in a 720×1560 window (needs qemu-system-aarch64)
 ```
 
-For the Redmi Note 10 Pro:
+For a phone, e.g. the POCO X3 NFC:
 
 ```sh
-ROVER_TARGET=sweet tools/build.sh out-sweet
-tools/check-phone-image.sh out-sweet sweet
+ROVER_TARGET=surya tools/build.sh out-surya
+tools/check-phone-image.sh out-surya surya
 ```
 
-Then follow [docs/FLASHING-SWEET.md](docs/FLASHING-SWEET.md). It erases the
+Then follow [docs/FLASHING-SM7150.md](docs/FLASHING-SM7150.md). It erases the
 phone. `tools/add-ssh-key.sh` lets your key in before flashing; afterwards the
 phone shows up as a network adapter on its USB cable, and you can
 `ssh rover@172.16.42.1`.
@@ -138,7 +147,7 @@ ssh -p 2222 rover@127.0.0.1
 
 ```
 image/          what goes into the image
-  targets/      one file per device (vm, sweet)
+  targets/      one file per device (vm, sweet, surya, davinci, tucana; common/ is shared)
   overlay/      files copied into the root: services, firewall, kiosk, boot hooks
   packages      Debian packages
 tools/          build, boot-test, run the VM, check a phone image

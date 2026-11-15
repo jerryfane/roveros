@@ -101,8 +101,10 @@ boot="$work/boot"
 install -d "$boot"
 cp "$(ls "$root"/boot/vmlinuz-* | sort -V | tail -1)" "$boot/vmlinuz"
 cp "$(ls "$root"/boot/initrd.img-* | sort -V | tail -1)" "$boot/initrd.img"
-if [ -n "$ROVER_DTB" ]; then
-  install -D -m644 "$root/boot/dtbs/$ROVER_DTB" "$boot/dtbs/$ROVER_DTB"
+if [ -n "$ROVER_DTBS" ]; then
+  for dtb in $ROVER_DTBS; do
+    install -D -m644 "$root/boot/dtbs/$dtb" "$boot/dtbs/$dtb"
+  done
   install -D -m644 "$root/usr/lib/systemd/boot/efi/systemd-bootaa64.efi" "$boot/EFI/BOOT/BOOTAA64.EFI"
   install -d "$boot/loader/entries"
   printf 'default rover.conf\ntimeout 0\n' >"$boot/loader/loader.conf"

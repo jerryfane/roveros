@@ -16,6 +16,7 @@ set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
 target=${ROVER_TARGET:-vm}
+case "$target" in */* | "") echo "build.sh: unknown target $target" >&2; exit 1 ;; esac
 [ -f "$here/targets/$target.sh" ] || { echo "build.sh: unknown target $target" >&2; exit 1; }
 # shellcheck source=image/config.sh
 . "$here/config.sh"
@@ -34,7 +35,7 @@ if [ "${1:-}" = --rootfs ]; then
   packages=$( (grep -v '^\s*#' "$here/packages" | awk 'NF {print $1}'; printf '%s\n' "${TARGET_PACKAGES[@]}") | paste -sd,)
   export ROVER_IMAGE_DIR=$here ROVER_WORK=$work ROVER_STATE_PATHS="${STATE_PATHS[*]}" \
     ROVER_TARGET=$target ROVER_SCALE=$TARGET_SCALE ROVER_CMDLINE=$TARGET_CMDLINE \
-    ROVER_DTB=${TARGET_DTB:-}
+    ROVER_DTBS="${TARGET_DTBS[*]:-}"
   exec setpriv --reuid=builder --regid=builder --init-groups \
     mmdebstrap --mode=unshare --variant=essential --arch=arm64 \
       --include="$packages" \
@@ -121,8 +122,12 @@ dd if="$work/data.ext4" of="$img" bs=1M seek=$((start + root_mb)) conv=notrunc,s
 
 files=(rover.img)
 if [ "$esp_mb" -gt 0 ]; then
-  fetch "$TARGET_UBOOT_URL" "$TARGET_UBOOT_SHA256" "$out/u-boot.img"
-  files+=(u-boot.img)
+  # One U-Boot per display panel variant; the flashing guide says which.
+  for spec in "${TARGET_UBOOTS[@]}"; do
+    read -r panel url sum <<<"$spec"
+    fetch "$url" "$sum" "$out/u-boot-$panel.img"
+    files+=("u-boot-$panel.img")
+  done
 else
   # qemu boots the kernel directly (tools/run-vm.sh).
   cp "$work/boot/vmlinuz" "$work/boot/initrd.img" "$out/"

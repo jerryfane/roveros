@@ -49,8 +49,13 @@ extract rover-root root.ext4
 part rover-data | grep -q . || fail "no rover-data partition"
 
 export MTOOLS_SKIP_CHECK=1
-for f in EFI/BOOT/BOOTAA64.EFI loader/loader.conf loader/entries/rover.conf vmlinuz initrd.img "dtbs/$TARGET_DTB"; do
+for f in EFI/BOOT/BOOTAA64.EFI loader/loader.conf loader/entries/rover.conf vmlinuz initrd.img "${TARGET_DTBS[@]/#/dtbs/}"; do
   mdir -i boot.fat "::/$f" >/dev/null 2>&1 || fail "EFI partition lacks $f"
+done
+for spec in "${TARGET_UBOOTS[@]}"; do
+  read -r panel _ <<<"$spec"
+  [ -s "/out/u-boot-$panel.img" ] || fail "no u-boot-$panel.img"
+  echo "u-boot: u-boot-$panel.img"
 done
 mtype -i boot.fat ::/loader/entries/rover.conf
 mcopy -i boot.fat ::/initrd.img initrd.img
