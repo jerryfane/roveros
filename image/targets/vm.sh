@@ -11,4 +11,6 @@ TARGET_SCALE=2
 # Plain 512-byte sectors, no EFI partition: qemu loads the kernel itself.
 TARGET_SECTOR_SIZE=512
 TARGET_ESP_SIZE_MB=0
-TARGET_CMDLINE="root=LABEL=rover-root ro console=ttyAMA0"
+# dummy_hcd gives the VM a USB device controller with its own host side, so
+# the network-over-USB path (udev rule, gadget, firewall, SSH) is tested too.
+TARGET_CMDLINE="root=LABEL=rover-root ro console=ttyAMA0 modules-load=dummy_hcd"

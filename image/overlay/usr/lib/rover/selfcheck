@@ -15,9 +15,25 @@ herdrup=$(yes_no pgrep -x herdrup)
 machine_id=$(yes_no sh -c 'grep -qE "^[0-9a-f]{32}$" /data/machine-id && cmp -s /etc/machine-id /data/machine-id')
 state() { systemctl is-active "$1" 2>/dev/null || true; }
 
+# Network over the USB cable: the gadget's address, and (when this kernel also
+# has the host side, as the VM does with dummy_hcd) whether SSH answers on it
+# from a separate network namespace standing in for the computer.
+usb_net=$(yes_no sh -c 'ip -4 -o address show | grep -q " inet 172\.16\.42\.1/24 "')
+usb_ssh=na
+for i in /sys/class/net/*; do
+  [ "$(basename "$(readlink -f "$i/device/driver")")" = cdc_ncm ] || continue
+  ip netns add rover-host 2>/dev/null
+  ip link set "${i##*/}" netns rover-host &&
+    ip -n rover-host address add 172.16.42.2/24 dev "${i##*/}" &&
+    ip -n rover-host link set "${i##*/}" up && sleep 2
+  usb_ssh=$(yes_no ip netns exec rover-host timeout 10 bash -c 'read -r l </dev/tcp/172.16.42.1/22 && [ "${l#SSH-}" != "$l" ]')
+  break
+done
+
 echo "ROVER-SELFCHECK root_ro=$root_ro data=$data machine_id=$machine_id herdrup=$herdrup" \
   "kiosk=$(state rover-kiosk) ssh=$(state ssh) tailscaled=$(state tailscaled)" \
-  "nftables=$(state nftables) network=$(state NetworkManager)"
+  "nftables=$(state nftables) network=$(state NetworkManager)" \
+  "usb_net=$usb_net usb_ssh=$usb_ssh"
 
 # Explain failures on the console, where the boot test can see them.
 for unit in $(systemctl list-units --failed --plain --no-legend | awk '{print $1}'); do

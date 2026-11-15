@@ -1,0 +1,9 @@
+[Unit]
+Description=RoverOS: network over the USB cable
+Documentation=file:///usr/lib/rover/usb-gadget
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/rover/usb-gadget

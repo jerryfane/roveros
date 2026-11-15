@@ -71,7 +71,7 @@ fi
 
 line=$(grep -a -o 'ROVER-SELFCHECK root_ro.*' "$out/serial.log" | tr -d '\r' | tail -1)
 echo "$line"
-expected="root_ro=yes data=yes machine_id=yes herdrup=yes kiosk=active ssh=active tailscaled=active nftables=active network=active"
+expected="root_ro=yes data=yes machine_id=yes herdrup=yes kiosk=active ssh=active tailscaled=active nftables=active network=active usb_net=yes usb_ssh=yes"
 for kv in $expected; do
   case " $line " in
     *" $kv "*) ;;
