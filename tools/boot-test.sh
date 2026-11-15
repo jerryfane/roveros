@@ -6,6 +6,8 @@
 # OUTDIR/screen.png; the 3 min one must not look blank.
 #
 # Usage: tools/boot-test.sh [OUTDIR]     (default: out/)
+# ROVER_BOOT_NESTED=1 boots the image as a phone has it: written whole into a
+# partition named userdata of a bigger disk, so the initramfs must map it.
 # Needs Docker. Writes to the disk are discarded (qemu -snapshot).
 set -euo pipefail
 
@@ -14,20 +16,28 @@ out=$(realpath -m "${1:-$repo/out}")
 timeout_s=${ROVER_BOOT_TIMEOUT:-900}
 
 docker run --rm \
-  -v "$repo/tools:/tools:ro" -v "$out:/out" \
-  -e ROVER_BOOT_TIMEOUT="$timeout_s" \
+  -v "$repo/tools:/tools:ro" -v "$repo/image/gpt.py:/gpt.py:ro" -v "$out:/out" \
+  -e ROVER_BOOT_TIMEOUT="$timeout_s" -e ROVER_BOOT_NESTED="${ROVER_BOOT_NESTED:-}" \
   debian:trixie bash -c '
 set -euo pipefail
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-  qemu-system-arm qemu-utils socat netpbm >/dev/null
+  qemu-system-arm qemu-utils socat netpbm python3 >/dev/null
 rm -f /out/serial.log /out/screen.png
-ROVER_DISPLAY=none ROVER_SNAPSHOT=1 /tools/run-vm.sh /out >/out/serial.log 2>&1 &
+disk=/out/rover.img
+if [ "$ROVER_BOOT_NESTED" = 1 ]; then
+  mib=$(( $(stat -c %s /out/rover.img) / 1048576 ))
+  disk=/tmp/disk.img
+  truncate -s $(( mib + 2 ))M $disk
+  python3 /gpt.py $disk 512 userdata:0fc63daf-8483-4772-8e79-3d69d8477de4:1:$mib
+  dd if=/out/rover.img of=$disk bs=1M seek=1 conv=notrunc,sparse status=none
+fi
+ROVER_DISK=$disk ROVER_DISPLAY=none ROVER_SNAPSHOT=1 /tools/run-vm.sh /out >/out/serial.log 2>&1 &
 vm=$!
 end=$(( $(date +%s) + ROVER_BOOT_TIMEOUT ))
 until grep -q "ROVER-SELFCHECK-END" /out/serial.log; do
   if ! kill -0 $vm 2>/dev/null || [ "$(date +%s)" -ge $end ] ||
-     grep -q "emergency mode" /out/serial.log; then
+     grep -qE "emergency mode|Gave up waiting|Kernel panic|^RoverOS: " /out/serial.log; then
     echo "boot-test: no self-check line; serial log in /out/serial.log" >&2
     kill $vm 2>/dev/null || true
     exit 1

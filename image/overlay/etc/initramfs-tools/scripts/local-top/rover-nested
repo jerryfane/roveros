@@ -1,0 +1,36 @@
+#!/bin/sh
+# On a phone the whole RoverOS image, with its own partition table, is written
+# into Android's userdata partition. U-Boot finds the EFI partition inside it
+# by itself; Linux does not read a partition table inside a partition. So map
+# the image on a loop device with its partitions: rover-root and rover-data
+# then appear by label, and the normal root wait finds them. The VM's disk has
+# rover-root directly, so this does nothing there.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+
+. /scripts/functions
+
+dev=/dev/disk/by-partlabel/userdata
+i=0
+while [ ! -e /dev/disk/by-label/rover-root ] && [ ! -e "$dev" ] && [ $i -lt 30 ]; do
+  sleep 1
+  i=$((i + 1))
+done
+[ -e /dev/disk/by-label/rover-root ] && exit 0
+# Neither: leave it to the normal root wait, which reports the missing root.
+[ -e "$dev" ] || exit 0
+
+# The image's sector size: the GPT header is in its second sector.
+sector=
+for s in 512 4096; do
+  if [ "$(dd if="$dev" bs=1 skip=$s count=8 2>/dev/null)" = "EFI PART" ]; then
+    sector=$s
+    break
+  fi
+done
+[ -n "$sector" ] || panic "RoverOS: userdata holds no RoverOS image"
+
+modprobe loop 2>/dev/null
+/bin/rover-losetup --find --partscan --sector-size "$sector" "$dev" ||
+  panic "RoverOS: cannot map the image in userdata"
