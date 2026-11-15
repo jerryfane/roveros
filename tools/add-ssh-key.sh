@@ -47,8 +47,12 @@ read -r uid gid <<<"$ids"; [ -n "${uid:-}" ] || fail "no rover user in the image
 home=/state/home/rover
 debugfs -R "stat $home" data.ext4 2>/dev/null | grep -q "^Inode:" || fail "data partition lacks $home"
 grep -E "^(ssh-|ecdsa-|sk-)" /key.pub >authorized_keys
+# A second run replaces the key: create .ssh only if it is missing (debugfs
+# mkdir on an existing name leaves an orphaned inode), remove the old key.
+mk=""
+debugfs -R "stat $home/.ssh" data.ext4 2>/dev/null | grep -q "^Inode:" || mk="mkdir $home/.ssh"
 debugfs -w data.ext4 -f - >/dev/null 2>&1 <<EOF
-mkdir $home/.ssh
+$mk
 rm $home/.ssh/authorized_keys
 write authorized_keys $home/.ssh/authorized_keys
 sif $home/.ssh mode 040700
