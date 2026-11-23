@@ -46,12 +46,23 @@ done
 # What HerdrUp printed while drawing its first screen, then the marker the
 # boot test waits for before its first screenshot. Again 3 minutes after
 # HerdrUp started, for slow first paints (WebKit under emulation).
+# PAMName=login moves the kiosk into the rover user's session scope, so its
+# own output is not under the service unit: match the service's identifier
+# (SyslogIdentifier=rover-kiosk) as well as the unit's systemd lines.
+kiosk_log() {
+  journalctl -b --no-pager -o cat "$@" \
+    _SYSTEMD_UNIT=rover-kiosk.service + SYSLOG_IDENTIFIER=rover-kiosk
+}
 sleep 20
-journalctl -b -u rover-kiosk --no-pager -o cat -n 40 | sed 's/^/ROVER-KIOSK /'
+kiosk_log -n 40 | sed 's/^/ROVER-KIOSK /'
 echo "ROVER-SELFCHECK-END"
 sleep 160
-journalctl -b -u rover-kiosk --no-pager -o cat -n 60 | sed 's/^/ROVER-KIOSK-3MIN /'
+kiosk_log -n 60 | sed 's/^/ROVER-KIOSK-3MIN /'
 # Every page error HerdrUp reported, however many lines came after it.
-journalctl -b -u rover-kiosk --no-pager -o cat --grep 'page error' | sed 's/^/ROVER-PAGE-ERROR /'
-echo "ROVER-WEBKIT $(dpkg-query -W -f '${Version}' libwebkit2gtk-4.1-0 2>/dev/null)"
+kiosk_log --grep 'page error' | sed 's/^/ROVER-PAGE-ERROR /'
+if webkit=$(dpkg-query -W -f '${Version}' libwebkit2gtk-4.1-0 2>&1) && [ -n "$webkit" ]; then
+  echo "ROVER-WEBKIT $webkit"
+else
+  echo "ROVER-WEBKIT unavailable: $webkit"
+fi
 echo "ROVER-SELFCHECK-LATE"
