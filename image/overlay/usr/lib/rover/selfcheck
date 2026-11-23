@@ -51,4 +51,7 @@ journalctl -b -u rover-kiosk --no-pager -o cat -n 40 | sed 's/^/ROVER-KIOSK /'
 echo "ROVER-SELFCHECK-END"
 sleep 160
 journalctl -b -u rover-kiosk --no-pager -o cat -n 60 | sed 's/^/ROVER-KIOSK-3MIN /'
+# Every page error HerdrUp reported, however many lines came after it.
+journalctl -b -u rover-kiosk --no-pager -o cat --grep 'page error' | sed 's/^/ROVER-PAGE-ERROR /'
+echo "ROVER-WEBKIT $(dpkg-query -W -f '${Version}' libwebkit2gtk-4.1-0 2>/dev/null)"
 echo "ROVER-SELFCHECK-LATE"
