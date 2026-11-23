@@ -34,3 +34,6 @@ libwebkit2gtk-4.1-0
 libgl1-mesa-dri
 fonts-dejavu-core
 fonts-noto-color-emoji
+# What the compositor shows, for the boot test and over SSH: grim takes a
+# screenshot of cage's output.
+grim

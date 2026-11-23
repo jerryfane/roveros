@@ -60,6 +60,11 @@ shot_at() { # SECONDS_AFTER_T0 NAME
 shot_at 0 s20
 shot_at 70 s90
 late=1
+until grep -q "ROVER-SCREEN-NOW" /out/serial.log; do
+  if [ "$(date +%s)" -ge $end ]; then late=0; break; fi
+  sleep 2
+done
+[ $late = 1 ] && shot sdisp
 until grep -q "ROVER-SELFCHECK-LATE" /out/serial.log; do
   if [ "$(date +%s)" -ge $end ]; then late=0; break; fi
   sleep 5
@@ -68,11 +73,23 @@ shot s180
 # A drawn HerdrUp screen has hundreds of colours; a blank or plain screen has
 # few (blank preview.17 under cage: 79; preview.15: 804).
 ppmhist -noheader /out/s180.ppm | wc -l >/out/screen.colours
+# The display must show what cage composited: the frame qemu showed just
+# before grim ran, against grim's capture of the same screen.
+match=no
+if [ $late = 1 ]; then
+  tr -d "\r" </out/serial.log | sed -n "s/.*ROVER-GRIM //p" | base64 -d >/tmp/grim.png &&
+    pngtopnm /tmp/grim.png | ppmtoppm >/tmp/grim.ppm &&
+    ppmtoppm </out/sdisp.ppm >/tmp/disp.ppm &&
+    cmp -s /tmp/grim.ppm /tmp/disp.ppm && match=yes
+  [ -s /tmp/grim.png ] && cp /tmp/grim.png /out/compositor.png
+fi
+echo $match >/out/screen.match
 pnmcat -lr /out/s20.ppm /out/s90.ppm /out/s180.ppm | pnmtopng >/out/screen.png
-rm -f /out/s20.ppm /out/s90.ppm /out/s180.ppm
+rm -f /out/s20.ppm /out/s90.ppm /out/s180.ppm /out/sdisp.ppm
 echo quit | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null || true
 wait $vm || true
-chown '"$(id -u):$(id -g)"' /out/serial.log /out/screen.png /out/screen.colours
+chown '"$(id -u):$(id -g)"' /out/serial.log /out/screen.png /out/screen.colours /out/screen.match
+[ -f /out/compositor.png ] && chown '"$(id -u):$(id -g)"' /out/compositor.png
 if [ $late = 0 ]; then
   echo "boot-test: FAIL: no late self-check report (ROVER-SELFCHECK-LATE)" >&2
   exit 1
@@ -98,6 +115,10 @@ fi
 if [ "$colours" -lt 150 ]; then
   echo "boot-test: FAIL: the screen looks blank ($colours colours); HerdrUp log:" >&2
   grep -a 'ROVER-KIOSK' "$out/serial.log" | tr -d '\r' >&2
+  exit 1
+fi
+if [ "$(cat "$out/screen.match")" != yes ]; then
+  echo "boot-test: FAIL: the display does not show what cage composited (cage's own capture: $out/compositor.png)" >&2
   exit 1
 fi
 echo "boot-test: PASS (screenshot: $out/screen.png)"
