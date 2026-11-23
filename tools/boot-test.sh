@@ -23,7 +23,7 @@ set -euo pipefail
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
   qemu-system-arm qemu-utils socat netpbm python3 >/dev/null
-rm -f /out/serial.log /out/screen.png /out/screen.match /out/compositor.png /out/*.ppm
+rm -f /out/serial.log /out/screen.png /out/screen.match /out/compositor.png
 disk=/out/rover.img
 if [ "$ROVER_BOOT_NESTED" = 1 ]; then
   mib=$(( $(stat -c %s /out/rover.img) / 1048576 ))
@@ -33,10 +33,11 @@ if [ "$ROVER_BOOT_NESTED" = 1 ]; then
   dd if=/out/rover.img of=$disk bs=1M seek=1 conv=notrunc,sparse status=none
 fi
 # The normal boot asks for the self-check screen capture; the nested one
-# boots like a real Rover, which must never put its screen on the console.
+# boots like a real Rover, which must never put its screen on the console. It
+# gets a near miss of the argument, which must not count as asking.
 screentest=1
 if [ "$ROVER_BOOT_NESTED" = 1 ]; then screentest=0; fi
-append=""
+append=rover.screentest=1-disabled
 if [ $screentest = 1 ]; then append=rover.screentest=1; fi
 ROVER_APPEND=$append ROVER_DISK=$disk ROVER_DISPLAY=none ROVER_SNAPSHOT=1 \
   /tools/run-vm.sh /out >/out/serial.log 2>&1 &
@@ -130,7 +131,7 @@ fi
 match=$(cat "$out/screen.match")
 if [ "$match" = skipped ]; then
   # A boot without rover.screentest=1 must not show the screen in any log.
-  if grep -aqE 'ROVER-SCREEN-NOW|ROVER-GRIM' "$out/serial.log"; then
+  if tr -d '\r' <"$out/serial.log" | grep -aqE '^\[ *[0-9.]+\] selfcheck\[[0-9]+\]: ROVER-(SCREEN-NOW|GRIM)'; then
     echo "boot-test: FAIL: the screen was captured without rover.screentest=1" >&2
     exit 1
   fi
