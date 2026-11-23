@@ -85,7 +85,11 @@ esac
 # repaint); if the two differ, the compositor stopped presenting frames
 # (gitmoot thread 537809). Its scene is static: a fresh image shows HerdrUp's
 # sign-in welcome.
-if grep -qw 'rover.screentest=1' /proc/cmdline; then
+screentest=0
+for arg in $(cat /proc/cmdline); do
+  [ "$arg" = rover.screentest=1 ] && screentest=1
+done
+if [ $screentest = 1 ]; then
   echo "ROVER-SCREEN-NOW"
   sleep 15
   shot=$(mktemp -d)
