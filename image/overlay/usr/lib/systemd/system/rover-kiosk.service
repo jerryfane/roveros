@@ -14,8 +14,9 @@ StandardInput=tty-fail
 StandardOutput=journal
 StandardError=journal
 # The kiosk runs in the rover user's session scope (PAMName), not under this
-# unit; this tag keeps its output findable (journalctl -t rover-kiosk).
-SyslogIdentifier=rover-kiosk
+# unit; tagging its output with the unit's name keeps it findable
+# (journalctl -t rover-kiosk).
+SyslogIdentifier=%N
 UtmpIdentifier=tty1
 UtmpMode=user
 EnvironmentFile=/etc/rover/kiosk.env

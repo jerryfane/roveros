@@ -48,12 +48,13 @@ done
 # HerdrUp started, for slow first paints (WebKit under emulation).
 # PAMName=login moves the kiosk into the rover user's session scope, so its
 # own output is not under the service unit: match the service's identifier
-# (SyslogIdentifier=rover-kiosk), the unit's own lines, and systemd's
+# (SyslogIdentifier=%N, the unit's name), the unit's own lines, and systemd's
 # messages about the unit (what journalctl -u adds).
+kiosk=rover-kiosk
 kiosk_log() {
   journalctl -b --no-pager -o cat "$@" \
-    _SYSTEMD_UNIT=rover-kiosk.service + SYSLOG_IDENTIFIER=rover-kiosk + \
-    _PID=1 UNIT=rover-kiosk.service
+    _SYSTEMD_UNIT=$kiosk.service + SYSLOG_IDENTIFIER=$kiosk + \
+    _PID=1 UNIT=$kiosk.service
 }
 sleep 20
 kiosk_log -n 40 | sed 's/^/ROVER-KIOSK /'
@@ -69,9 +70,10 @@ if kiosk_log --grep 'rover-kiosk: starting HerdrUp' | grep -q .; then
 else
   echo "ROVER-KIOSK-STDERR no"
 fi
-if webkit=$(dpkg-query -W -f '${Version}' libwebkit2gtk-4.1-0 2>&1) && [ -n "$webkit" ]; then
-  echo "ROVER-WEBKIT $webkit"
-else
-  echo "ROVER-WEBKIT unavailable: $webkit"
-fi
+# Only an installed package's version counts; a removed one can keep a record.
+webkit=$(dpkg-query -W -f '${db:Status-Status} ${Version}' libwebkit2gtk-4.1-0 2>&1)
+case "$webkit" in
+  "installed "?*) echo "ROVER-WEBKIT ${webkit#installed }" ;;
+  *) echo "ROVER-WEBKIT unavailable: $webkit" ;;
+esac
 echo "ROVER-SELFCHECK-LATE"
