@@ -9,4 +9,6 @@ for output in $(wlr-randr | awk '/^[^ ]/ {print $1}'); do
   wlr-randr --output "$output" --scale "$scale" ||
     echo "rover-kiosk: could not scale $output to $scale" >&2
 done
+# On stderr inside cage: shows in the journal that the app's stderr gets there.
+echo "rover-kiosk: starting HerdrUp (WEBKIT_DISABLE_COMPOSITING_MODE=${WEBKIT_DISABLE_COMPOSITING_MODE:-unset})" >&2
 exec /opt/herdrup/herdrup
