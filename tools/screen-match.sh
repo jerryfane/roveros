@@ -13,8 +13,9 @@ trap 'rm -rf -- "$work"' EXIT
 
 # Only whole self-check records count: a line must start with the console's
 # timestamp and the self-check's name, so quoted copies elsewhere do not. The
-# capture must be exactly one block, BEGIN, payload, END, in that order and all
-# from the same self-check process; anything else is "no".
+# capture must be exactly one block, BEGIN, payload, END, in that order, with
+# BEGIN and END from the same self-check process; anything else is "no". The
+# payload lines carry the PID of the self-check's encoder child, not its own.
 [ -s "$display" ] || { echo no; exit 0; }
 tr -d '\r' <"$serial" | awk -v out="$work/b64" '
   match($0, /^\[ *[0-9.]+\] selfcheck\[[0-9]+\]: ROVER-GRIM/) {
@@ -29,7 +30,7 @@ tr -d '\r' <"$serial" | awk -v out="$work/b64" '
       state = "done"; next
     }
     if (rest ~ /^ROVER-GRIM [A-Za-z0-9+\/=]+$/) {
-      if (state != "in" || pid != owner) bad = 1
+      if (state != "in") bad = 1
       sub(/^ROVER-GRIM /, "", rest); print rest > out; lines++; next
     }
   }
