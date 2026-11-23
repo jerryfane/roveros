@@ -66,4 +66,20 @@ journalctl -b --no-pager -o short-monotonic _COMM=herdrup + _COMM=cage + _COMM=k
 systemctl cat rover-kiosk 2>&1 | d unit
 sleep 60
 ps -eo pid,etime,time,stat,args | grep -iE 'herdrup|WebKit|cage' | grep -v grep | d ps2
+# herdrup-desk, gitmoot 538434: where each thread waits, HerdrUp's storage,
+# its environment, then a Go stack dump (SIGQUIT ends the app; last).
+for p in $(pidof herdrup WebKitWebProcess WebKitNetworkProcess); do
+  for t in /proc/$p/task/*; do echo "$p $(cat $t/comm) $(cat $t/wchan)"; done
+done | d wchan
+runuser -u rover -- sh -c '
+  ls -ld "${XDG_DATA_HOME:-$HOME/.local/share}/herdrup" "${XDG_CACHE_HOME:-$HOME/.cache}/herdrup" "$HOME"
+  findmnt -T "$HOME"
+  touch "$HOME/.local/share/herdrup/x" && echo writable
+  ls -la "${XDG_DATA_HOME:-$HOME/.local/share}/herdrup" "${XDG_CACHE_HOME:-$HOME/.cache}/herdrup"
+' 2>&1 | d store
+tr '\0' '\n' </proc/$(pidof herdrup)/environ | grep -E 'DBUS|XDG_|HOME|WAYLAND' | d env
+cursor=$(journalctl -n 0 --show-cursor --no-pager | sed -n 's/^-- cursor: //p')
+kill -QUIT $(pidof herdrup)
+sleep 15
+journalctl -b --no-pager -o cat --after-cursor "$cursor" SYSLOG_IDENTIFIER=cage | d stack
 echo "ROVER-SELFCHECK-LATE"
