@@ -7,6 +7,7 @@
 #   ROVER_SSH_PORT host port forwarded to the VM's SSH (default: 2222)
 #   ROVER_SNAPSHOT=1 discards writes to the disk when the VM stops
 #   ROVER_DISK     disk image to boot (default: OUTDIR/rover.img)
+#   ROVER_APPEND   extra kernel command line words (boot-test: rover.screentest=1)
 # The serial console is on stdio. qemu's monitor is on a UNIX socket in OUTDIR.
 set -euo pipefail
 
@@ -28,7 +29,7 @@ snapshot=()
 
 exec qemu-system-aarch64 "${accel[@]}" -smp 4 -m 3072 \
   -kernel "$out/vmlinuz" -initrd "$out/initrd.img" \
-  -append "$(cat "$out/cmdline.txt")" \
+  -append "$(cat "$out/cmdline.txt")${ROVER_APPEND:+ $ROVER_APPEND}" \
   -drive "if=virtio,format=raw,file=${ROVER_DISK:-$out/rover.img}" "${snapshot[@]}" \
   -device virtio-gpu-pci,xres=720,yres=1560 \
   -device qemu-xhci -device usb-kbd -device usb-tablet \

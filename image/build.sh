@@ -35,7 +35,7 @@ if [ "${1:-}" = --rootfs ]; then
   packages=$( (grep -v '^\s*#' "$here/packages" | awk 'NF {print $1}'; printf '%s\n' "${TARGET_PACKAGES[@]}") | paste -sd,)
   export ROVER_IMAGE_DIR=$here ROVER_WORK=$work ROVER_STATE_PATHS="${STATE_PATHS[*]}" \
     ROVER_TARGET=$target ROVER_SCALE=$TARGET_SCALE ROVER_CMDLINE=$TARGET_CMDLINE \
-    ROVER_DTBS="${TARGET_DTBS[*]:-}" ROVER_KIOSK_ENV="${TARGET_KIOSK_ENV[*]:-}"
+    ROVER_DTBS="${TARGET_DTBS[*]:-}" ROVER_RENDERER="${TARGET_RENDERER:-}"
   exec setpriv --reuid=builder --regid=builder --init-groups \
     mmdebstrap --mode=unshare --variant=essential --arch=arm64 \
       --include="$packages" \
