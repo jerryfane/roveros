@@ -107,8 +107,10 @@ for kv in $expected; do
 done
 colours=$(cat "$out/screen.colours")
 # The app's stderr must reach the journal the self-check reads, or its page
-# errors are invisible.
-if ! grep -aq 'ROVER-KIOSK-STDERR yes' "$out/serial.log"; then
+# errors are invisible. Only the self-check's own result line counts, not the
+# same words quoted inside an excerpt.
+stderr=$(tr -d '\r' <"$out/serial.log" | grep -aoE 'selfcheck\[[0-9]+\]: ROVER-KIOSK-STDERR (yes|no)$' | tail -1)
+if [ "${stderr##* }" != yes ]; then
   echo "boot-test: FAIL: the kiosk's stderr is not in the self-check's journal" >&2
   exit 1
 fi
