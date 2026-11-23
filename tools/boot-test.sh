@@ -23,7 +23,7 @@ set -euo pipefail
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
   qemu-system-arm qemu-utils socat netpbm python3 >/dev/null
-rm -f /out/serial.log /out/screen.png
+rm -f /out/serial.log /out/screen.png /out/screen.match /out/compositor.png /out/*.ppm
 disk=/out/rover.img
 if [ "$ROVER_BOOT_NESTED" = 1 ]; then
   mib=$(( $(stat -c %s /out/rover.img) / 1048576 ))
@@ -32,7 +32,14 @@ if [ "$ROVER_BOOT_NESTED" = 1 ]; then
   python3 /gpt.py $disk 512 userdata:0fc63daf-8483-4772-8e79-3d69d8477de4:1:$mib
   dd if=/out/rover.img of=$disk bs=1M seek=1 conv=notrunc,sparse status=none
 fi
-ROVER_DISK=$disk ROVER_DISPLAY=none ROVER_SNAPSHOT=1 /tools/run-vm.sh /out >/out/serial.log 2>&1 &
+# The normal boot asks for the self-check screen capture; the nested one
+# boots like a real Rover, which must never put its screen on the console.
+screentest=1
+if [ "$ROVER_BOOT_NESTED" = 1 ]; then screentest=0; fi
+append=""
+if [ $screentest = 1 ]; then append=rover.screentest=1; fi
+ROVER_APPEND=$append ROVER_DISK=$disk ROVER_DISPLAY=none ROVER_SNAPSHOT=1 \
+  /tools/run-vm.sh /out >/out/serial.log 2>&1 &
 vm=$!
 end=$(( $(date +%s) + ROVER_BOOT_TIMEOUT ))
 until grep -q "ROVER-SELFCHECK-END" /out/serial.log; do
@@ -47,7 +54,8 @@ done
 # Frames are timed from the END marker, which the guest prints 20 s after
 # HerdrUp starts; the late marker comes 160 s after that (3 min).
 t0=$(date +%s)
-shot() { # NAME: screendump to /out/NAME.ppm
+shot() { # NAME: screendump to /out/NAME.ppm, never an older file
+  rm -f "/out/$1.ppm"
   echo "screendump /out/$1.ppm" | socat - UNIX-CONNECT:/out/monitor.sock >/dev/null
   for _ in $(seq 20); do [ -s "/out/$1.ppm" ] && return; sleep 0.5; done
   echo "boot-test: screendump $1 produced nothing" >&2
@@ -60,11 +68,13 @@ shot_at() { # SECONDS_AFTER_T0 NAME
 shot_at 0 s20
 shot_at 70 s90
 late=1
-until grep -q "ROVER-SCREEN-NOW" /out/serial.log; do
-  if [ "$(date +%s)" -ge $end ]; then late=0; break; fi
-  sleep 2
-done
-[ $late = 1 ] && shot sdisp
+if [ $screentest = 1 ]; then
+  until grep -q "ROVER-SCREEN-NOW" /out/serial.log; do
+    if [ "$(date +%s)" -ge $end ]; then late=0; break; fi
+    sleep 2
+  done
+  if [ $late = 1 ]; then shot sdisp; fi
+fi
 until grep -q "ROVER-SELFCHECK-LATE" /out/serial.log; do
   if [ "$(date +%s)" -ge $end ]; then late=0; break; fi
   sleep 5
@@ -76,12 +86,10 @@ ppmhist -noheader /out/s180.ppm | wc -l >/out/screen.colours
 # The display must show what cage composited: the frame qemu showed just
 # before grim ran, against the grim capture of the same screen.
 match=no
-if [ $late = 1 ]; then
-  tr -d "\r" </out/serial.log | sed -n "s/.*ROVER-GRIM //p" | base64 -d >/tmp/grim.png &&
-    pngtopnm /tmp/grim.png | ppmtoppm >/tmp/grim.ppm &&
-    ppmtoppm </out/sdisp.ppm >/tmp/disp.ppm &&
-    cmp -s /tmp/grim.ppm /tmp/disp.ppm && match=yes
-  [ -s /tmp/grim.png ] && cp /tmp/grim.png /out/compositor.png
+if [ $screentest = 0 ]; then
+  match=skipped
+elif [ $late = 1 ]; then
+  match=$(/tools/screen-match.sh /out/serial.log /out/sdisp.ppm /out/compositor.png)
 fi
 echo $match >/out/screen.match
 pnmcat -lr /out/s20.ppm /out/s90.ppm /out/s180.ppm | pnmtopng >/out/screen.png
@@ -109,7 +117,7 @@ colours=$(cat "$out/screen.colours")
 # The app's stderr must reach the journal the self-check reads, or its page
 # errors are invisible. Only the self-check's own result line counts, not the
 # same words quoted inside an excerpt.
-stderr=$(tr -d '\r' <"$out/serial.log" | grep -aoE 'selfcheck\[[0-9]+\]: ROVER-KIOSK-STDERR (yes|no)$' | tail -1)
+stderr=$(tr -d '\r' <"$out/serial.log" | grep -aE '^\[ *[0-9.]+\] selfcheck\[[0-9]+\]: ROVER-KIOSK-STDERR (yes|no)$' | tail -1)
 if [ "${stderr##* }" != yes ]; then
   echo "boot-test: FAIL: the kiosk's stderr is not in the self-check's journal" >&2
   exit 1
@@ -119,7 +127,14 @@ if [ "$colours" -lt 150 ]; then
   grep -a 'ROVER-KIOSK' "$out/serial.log" | tr -d '\r' >&2
   exit 1
 fi
-if [ "$(cat "$out/screen.match")" != yes ]; then
+match=$(cat "$out/screen.match")
+if [ "$match" = skipped ]; then
+  # A boot without rover.screentest=1 must not show the screen in any log.
+  if grep -aqE 'ROVER-SCREEN-NOW|ROVER-GRIM' "$out/serial.log"; then
+    echo "boot-test: FAIL: the screen was captured without rover.screentest=1" >&2
+    exit 1
+  fi
+elif [ "$match" != yes ]; then
   echo "boot-test: FAIL: the display does not show what cage composited (cage's own capture: $out/compositor.png)" >&2
   exit 1
 fi
