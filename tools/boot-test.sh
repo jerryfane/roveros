@@ -74,7 +74,7 @@ shot s180
 # few (blank preview.17 under cage: 79; preview.15: 804).
 ppmhist -noheader /out/s180.ppm | wc -l >/out/screen.colours
 # The display must show what cage composited: the frame qemu showed just
-# before grim ran, against grim's capture of the same screen.
+# before grim ran, against the grim capture of the same screen.
 match=no
 if [ $late = 1 ]; then
   tr -d "\r" </out/serial.log | sed -n "s/.*ROVER-GRIM //p" | base64 -d >/tmp/grim.png &&
