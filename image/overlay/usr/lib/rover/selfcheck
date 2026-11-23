@@ -78,17 +78,28 @@ case "$webkit" in
   "installed "?*) echo "ROVER-WEBKIT ${webkit#installed }" ;;
   *) echo "ROVER-WEBKIT unavailable: $webkit" ;;
 esac
-# What cage itself has composited, out on the console as base64. The boot test
-# takes the display's frame on the marker, before grim runs (grim makes cage
+# Only when the boot test asks (kernel argument rover.screentest=1, which only
+# tools/boot-test.sh adds): what cage itself has composited, out on the console
+# as base64. A real Rover never puts its screen in a log. The boot test takes
+# the display's frame on the marker, before grim runs (grim makes cage
 # repaint); if the two differ, the compositor stopped presenting frames
-# (gitmoot thread 537809).
-echo "ROVER-SCREEN-NOW"
-sleep 15
-runuser -u rover -- env WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000 \
-  grim /tmp/rover-screen.png 2>&1 | sed 's/^/ROVER-GRIM-ERR /'
-if [ -s /tmp/rover-screen.png ]; then
-  echo "ROVER-GRIM-BEGIN"
-  base64 -w 120 /tmp/rover-screen.png | sed 's/^/ROVER-GRIM /'
-  echo "ROVER-GRIM-END"
+# (gitmoot thread 537809). Its scene is static: a fresh image shows HerdrUp's
+# sign-in welcome.
+if grep -qw 'rover.screentest=1' /proc/cmdline; then
+  echo "ROVER-SCREEN-NOW"
+  sleep 15
+  shot=$(mktemp -d)
+  chown rover "$shot"
+  if runuser -u rover -- env WAYLAND_DISPLAY=wayland-0 \
+      XDG_RUNTIME_DIR="/run/user/$(id -u rover)" grim "$shot/screen.png" 2>"$shot/err" &&
+    [ -s "$shot/screen.png" ]; then
+    echo "ROVER-GRIM-BEGIN"
+    base64 -w 120 "$shot/screen.png" | sed 's/^/ROVER-GRIM /'
+    echo "ROVER-GRIM-END"
+  else
+    sed 's/^/ROVER-GRIM-ERR /' "$shot/err"
+    echo "ROVER-GRIM-FAILED"
+  fi
+  rm -rf -- "$shot"
 fi
 echo "ROVER-SELFCHECK-LATE"
