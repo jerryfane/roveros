@@ -131,7 +131,9 @@ fi
 match=$(cat "$out/screen.match")
 if [ "$match" = skipped ]; then
   # A boot without rover.screentest=1 must not show the screen in any log.
-  if tr -d '\r' <"$out/serial.log" | grep -aqE '^\[ *[0-9.]+\] selfcheck\[[0-9]+\]: ROVER-(SCREEN-NOW|GRIM)'; then
+  # grep the file itself: with pipefail, grep -q at the end of a pipe makes the
+  # writer die of SIGPIPE and the match counts as a failure.
+  if grep -aqE '^\[ *[0-9.]+\] selfcheck\[[0-9]+\]: ROVER-(SCREEN-NOW|GRIM)' "$out/serial.log"; then
     echo "boot-test: FAIL: the screen was captured without rover.screentest=1" >&2
     exit 1
   fi
