@@ -89,6 +89,12 @@ for kv in $expected; do
   esac
 done
 colours=$(cat "$out/screen.colours")
+# The app's stderr must reach the journal the self-check reads, or its page
+# errors are invisible.
+if ! grep -aq 'ROVER-KIOSK-3MIN rover-kiosk: starting HerdrUp' "$out/serial.log"; then
+  echo "boot-test: FAIL: the kiosk's stderr is not in the self-check's journal" >&2
+  exit 1
+fi
 if [ "$colours" -lt 150 ]; then
   echo "boot-test: FAIL: the screen looks blank ($colours colours); HerdrUp log:" >&2
   grep -a 'ROVER-KIOSK' "$out/serial.log" | tr -d '\r' >&2
