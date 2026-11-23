@@ -34,3 +34,4 @@ libwebkit2gtk-4.1-0
 libgl1-mesa-dri
 fonts-dejavu-core
 fonts-noto-color-emoji
+grim  # EXPERIMENT: in-VM screenshot (herdrup-desk 538486)
