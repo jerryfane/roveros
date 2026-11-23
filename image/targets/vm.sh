@@ -7,6 +7,11 @@ TARGET_APKS=()
 
 # 720x1560 screen; scale 2 lays HerdrUp out at 360 logical px.
 TARGET_SCALE=2
+# Extra lines for /etc/rover/kiosk.env. The VM's virtio-gpu output gets no new
+# frames from cage with the GLES renderer on Mesa's kms_swrast: HerdrUp draws,
+# but the screen keeps its first frame (gitmoot thread 537809). pixman
+# presents. Phones keep the GPU renderer.
+TARGET_KIOSK_ENV=(WLR_RENDERER=pixman)
 
 # Plain 512-byte sectors, no EFI partition: qemu loads the kernel itself.
 TARGET_SECTOR_SIZE=512
