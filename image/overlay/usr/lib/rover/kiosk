@@ -9,6 +9,7 @@ for output in $(wlr-randr | awk '/^[^ ]/ {print $1}'); do
   wlr-randr --output "$output" --scale "$scale" ||
     echo "rover-kiosk: could not scale $output to $scale" >&2
 done
-# On stderr, like HerdrUp's own log: the boot test checks it reaches the journal.
-echo "rover-kiosk: starting HerdrUp" >&2
+# On stderr, like HerdrUp's own log: the self-check looks for this exact line
+# to tell whether the kiosk's stderr reaches the journal.
+echo "ROVER-KIOSK-START" >&2
 exec /opt/herdrup/herdrup
