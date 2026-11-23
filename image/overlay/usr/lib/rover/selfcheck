@@ -54,4 +54,16 @@ journalctl -b -u rover-kiosk --no-pager -o cat -n 60 | sed 's/^/ROVER-KIOSK-3MIN
 # Every page error HerdrUp reported, however many lines came after it.
 journalctl -b -u rover-kiosk --no-pager -o cat --grep 'page error' | sed 's/^/ROVER-PAGE-ERROR /'
 echo "ROVER-WEBKIT $(dpkg-query -W -f '${Version}' libwebkit2gtk-4.1-0 2>/dev/null)"
+# Why HerdrUp's first render may not run (herdrup-desk, gitmoot 538331):
+# virtualisation type, whether its processes still use CPU a minute apart,
+# where its stdout/stderr go, and everything they logged in any unit.
+d() { sed "s/^/ROVER-DIAG $1 /"; }
+systemd-detect-virt 2>&1 | d virt
+grep -m1 -iE 'BogoMIPS' /proc/cpuinfo | d cpu
+ps -eo pid,etime,time,stat,args | grep -iE 'herdrup|WebKit|cage' | grep -v grep | d ps1
+for p in $(pgrep -x herdrup); do ls -l /proc/$p/fd/1 /proc/$p/fd/2 2>&1 | d fd; done
+journalctl -b --no-pager -o short-monotonic _COMM=herdrup + _COMM=cage + _COMM=kiosk + _COMM=WebKitWebProces + _COMM=WebKitNetworkPr 2>&1 | tail -n 80 | d log
+systemctl cat rover-kiosk 2>&1 | d unit
+sleep 60
+ps -eo pid,etime,time,stat,args | grep -iE 'herdrup|WebKit|cage' | grep -v grep | d ps2
 echo "ROVER-SELFCHECK-LATE"

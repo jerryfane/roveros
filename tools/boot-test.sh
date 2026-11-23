@@ -15,6 +15,7 @@ repo=$(cd "$(dirname "$0")/.." && pwd)
 out=$(realpath -m "${1:-$repo/out}")
 timeout_s=${ROVER_BOOT_TIMEOUT:-900}
 
+echo "boot-test: host /dev/kvm: $(ls -l /dev/kvm 2>&1); the VM runs in a container without it, so qemu uses TCG"
 docker run --rm \
   -v "$repo/tools:/tools:ro" -v "$repo/image/gpt.py:/gpt.py:ro" -v "$out:/out" \
   -e ROVER_BOOT_TIMEOUT="$timeout_s" -e ROVER_BOOT_NESTED="${ROVER_BOOT_NESTED:-}" \
