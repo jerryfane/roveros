@@ -91,7 +91,7 @@ done
 colours=$(cat "$out/screen.colours")
 # The app's stderr must reach the journal the self-check reads, or its page
 # errors are invisible.
-if ! grep -aq 'ROVER-KIOSK-3MIN rover-kiosk: starting HerdrUp' "$out/serial.log"; then
+if ! grep -aq 'ROVER-KIOSK-STDERR yes' "$out/serial.log"; then
   echo "boot-test: FAIL: the kiosk's stderr is not in the self-check's journal" >&2
   exit 1
 fi

@@ -48,10 +48,12 @@ done
 # HerdrUp started, for slow first paints (WebKit under emulation).
 # PAMName=login moves the kiosk into the rover user's session scope, so its
 # own output is not under the service unit: match the service's identifier
-# (SyslogIdentifier=rover-kiosk) as well as the unit's systemd lines.
+# (SyslogIdentifier=rover-kiosk), the unit's own lines, and systemd's
+# messages about the unit (what journalctl -u adds).
 kiosk_log() {
   journalctl -b --no-pager -o cat "$@" \
-    _SYSTEMD_UNIT=rover-kiosk.service + SYSLOG_IDENTIFIER=rover-kiosk
+    _SYSTEMD_UNIT=rover-kiosk.service + SYSLOG_IDENTIFIER=rover-kiosk + \
+    _PID=1 UNIT=rover-kiosk.service
 }
 sleep 20
 kiosk_log -n 40 | sed 's/^/ROVER-KIOSK /'
@@ -60,6 +62,13 @@ sleep 160
 kiosk_log -n 60 | sed 's/^/ROVER-KIOSK-3MIN /'
 # Every page error HerdrUp reported, however many lines came after it.
 kiosk_log --grep 'page error' | sed 's/^/ROVER-PAGE-ERROR /'
+# Whether the kiosk's stderr reaches the journal at all, independent of how
+# many lines the excerpts above keep.
+if kiosk_log --grep 'rover-kiosk: starting HerdrUp' | grep -q .; then
+  echo "ROVER-KIOSK-STDERR yes"
+else
+  echo "ROVER-KIOSK-STDERR no"
+fi
 if webkit=$(dpkg-query -W -f '${Version}' libwebkit2gtk-4.1-0 2>&1) && [ -n "$webkit" ]; then
   echo "ROVER-WEBKIT $webkit"
 else
